@@ -1,47 +1,58 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import ProductCard from '../../components/Productcard';
 import './Plants.css';
-import pl1 from '../../assets/pl1.jpg';
-import pl2 from '../../assets/pl2.jpg';
-import pl3 from '../../assets/pl3.jpg';
-import pl4 from '../../assets/pl4.jpg';
-import pl5 from '../../assets/pl5.jpg';
-import pl6 from '../../assets/pl6.jpg';
-import pl7 from '../../assets/pl7.jpg';
-import pl8 from '../../assets/pl8.jpg';
 
-const samplePlants = [
-  { id: 1, name: 'Snake Plant', description: 'Perfect for low light environments.', price: 350, image: pl1 },
-  { id: 2, name: 'Peace Lily', description: 'Elegant and air-purifying.', price: 450, image: pl2 },
-  { id: 3, name: 'Monstera Deliciosa', description: 'Tropical beauty with split leaves.', price: 600, image: pl3 },
-  { id: 4, name: 'Fiddle Leaf Fig', description: 'Trendy statement plant for indoors.', price: 750, image: pl4 },
-  { id: 5, name: 'Aloe Vera', description: 'Healing succulent, easy to grow.', price: 250, image: pl5 },
-  { id: 6, name: 'Rubber Plant', description: 'Hardy plant with glossy dark leaves.', price: 400, image: pl6 },
-  { id: 7, name: 'ZZ Plant', description: 'Almost impossible to kill.', price: 500, image: pl7 },
-  { id: 8, name: 'Pothos', description: 'Cascading beauty for any shelf.', price: 300, image: pl8 },
-];
+const Plants = ({ onAddToCart, refreshTrigger }) => {
+  const [plantProducts, setPlantProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-const Plants = () => {
+  useEffect(() => {
+    const fetchPlants = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch('http://127.0.0.1:5000/api/home/products?category=plants');
+        const data = await response.json();
+        setPlantProducts(data.data || []);
+      } catch (err) {
+        console.error('Failed to fetch plants:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPlants();
+  }, [refreshTrigger]);
+
+  const handleAddToCart = (product) => {
+    if (onAddToCart) {
+      onAddToCart(product);
+    }
+    alert(`${product.name} added to cart! 🛒`);
+  };
+
   return (
     <div className="plants-page">
       <div className="plants-container">
         <div className="plants-header">
           <h1 className="plants-title">🌿 Indoor Plants Collection</h1>
-          <p className="plants-subtitle">Bring nature indoors with our beautiful, air-purifying plants</p>
+          <p className="plants-subtitle">
+            Bring nature indoors with our beautiful, air-purifying plants
+          </p>
         </div>
 
         <div className="plants-grid">
-          {samplePlants.map((plant) => (
-            <div className="plant-sample-card" key={plant.id}>
-              <div className="plant-card-image">
-                <img src={plant.image} alt={plant.name} />
-              </div>
-              <div className="plant-card-body">
-                <h3>{plant.name}</h3>
-                <p>{plant.description}</p>
-                <span className="plant-price">₹{plant.price}</span>
-              </div>
-            </div>
-          ))}
+          {loading ? (
+            <div style={{ textAlign: 'center', gridColumn: '1/-1', padding: '40px', color: 'var(--primary-pink)' }}>Loading plants... 🌿</div>
+          ) : plantProducts.length > 0 ? (
+            plantProducts.map((product) => (
+              <ProductCard
+                key={product.id}
+                product={product}
+                onAddToCart={handleAddToCart}
+              />
+            ))
+          ) : (
+            <div style={{ textAlign: 'center', gridColumn: '1/-1', color: '#aaa' }}>No plant products available yet. Admin can add plants using the + icon.</div>
+          )}
         </div>
       </div>
     </div>
