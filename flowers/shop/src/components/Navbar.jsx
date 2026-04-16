@@ -1,0 +1,42 @@
+import React from 'react';
+import { Link } from 'react-router-dom';
+import './Navbar.css';
+import logo from '../assets/logo.png';
+
+const Navbar = ({ cartCount = 0 }) => {
+  return (
+    <nav className="navbar">
+      <div className="logo">
+        <img src={logo} alt="Cup & Petal Logo" />
+          <h3 className='logo-name'>Cup<span className='and'>&</span>Petal</h3>
+      </div>
+
+      <ul className="navbar-menu">
+        <li className="navbar-item">
+          <Link to="/">Home</Link>
+        </li>
+        <li className="navbar-item">
+          <Link to="/products?category=cakes">Cakes</Link>
+        </li>
+        <li className="navbar-item">
+          <Link to="/products?category=flowers">Flowers</Link>
+        </li>
+        <li className="navbar-item">
+          <Link to="/gifts">Gifts</Link>
+        </li>
+      </ul>
+
+      <div className="navbar-icons">
+        <Link to="/cart" className="navbar-icon">
+          🛒
+          {cartCount > 0 && <span className="cart-count">{cartCount}</span>}
+        </Link>
+        <Link to="/login" className="navbar-icon">
+          👤
+        </Link>
+      </div>
+    </nav>
+  );
+};
+
+export default Navbar;
