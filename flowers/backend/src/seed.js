@@ -79,19 +79,19 @@ const seedDatabase = async () => {
 
       // ── Seed admin user ───────────────────────────────────────
       const existingAdmin = await client.query(
-        "SELECT id FROM users WHERE email = 'admin@bloombliss.com'"
+        "SELECT id FROM users WHERE email = 'admin123@gmail.com'"
       );
 
       if (existingAdmin.rows.length === 0) {
         const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash('admin123', salt);
+        const hashedPassword = await bcrypt.hash('admin12345', salt);
 
         await client.query(
           `INSERT INTO users (name, email, password, role)
            VALUES ($1, $2, $3, $4)`,
-          ['Admin', 'admin@bloombliss.com', hashedPassword, 'admin']
+          ['Admin', 'admin123@gmail.com', hashedPassword, 'admin']
         );
-        console.log('✅ Admin user created (admin@bloombliss.com / admin123)');
+        console.log('✅ Admin user created (admin123@gmail.com / admin12345)');
       } else {
         console.log('ℹ️  Admin user already exists — skipped.');
       }

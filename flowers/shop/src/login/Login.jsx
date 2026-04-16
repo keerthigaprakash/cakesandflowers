@@ -26,7 +26,8 @@ const Login = ({ onLogin }) => {
       const data = await response.json();
 
       if (data.success) {
-        onLogin(data.user);
+        if (data.data.token) localStorage.setItem('token', data.data.token);
+        onLogin(data.data.user);
         navigate('/');
       } else {
         setError(data.message || 'Invalid email or password');

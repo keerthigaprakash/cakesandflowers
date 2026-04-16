@@ -17,7 +17,7 @@ router.post('/auth/login', controller.login);
 
 // Products (read/write)
 router.get('/products', controller.getProducts);
-router.post('/products', controller.createProduct); // Moving to public for the Add Item demo
+router.post('/products', authenticate, authorize('admin'), controller.createProduct);
 router.get('/featured', controller.getFeaturedProducts);
 router.get('/products/:id', controller.getProductById);
 router.get('/categories', controller.getCategories);

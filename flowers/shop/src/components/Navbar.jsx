@@ -1,9 +1,12 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import './Navbar.css';
 import logo from '../assets/logo.png';
 
-const Navbar = ({ cartCount = 0, user }) => {
+const Navbar = ({ cartCount = 0, user, onAddItem }) => {
+  const location = useLocation();
+  const isHomePage = location.pathname === '/';
+
   return (
     <nav className="navbar">
       <div className="logo">
@@ -24,6 +27,9 @@ const Navbar = ({ cartCount = 0, user }) => {
         <li className="navbar-item">
           <Link to="/gifts">Gifts</Link>
         </li>
+        <li className="navbar-item">
+          <Link to="/plants">Plants</Link>
+        </li>
       </ul>
 
       <div className="navbar-icons">
@@ -32,6 +38,11 @@ const Navbar = ({ cartCount = 0, user }) => {
             {user.role === 'admin' && <span className="admin-badge">ADMIN 👑</span>}
             Hi, {user.name || 'User'}! 
           </span>
+        )}
+        {user?.role === 'admin' && onAddItem && !isHomePage && (
+          <button className="navbar-icon" onClick={onAddItem} title="Add New Product" style={{ border: 'none', fontSize: '24px' }}>
+            +
+          </button>
         )}
         <Link to="/cart" className="navbar-icon">
           🛒

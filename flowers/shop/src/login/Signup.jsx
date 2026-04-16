@@ -33,7 +33,7 @@ const Signup = ({ onSignup }) => {
       const data = await response.json();
 
       if (data.success) {
-        onSignup(data.user);
+        onSignup(data.data.user);
         navigate('/');
       } else {
         setError(data.message || 'Registration failed');

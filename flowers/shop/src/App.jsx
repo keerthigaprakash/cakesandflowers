@@ -5,7 +5,6 @@ import './App.css';
 // Components
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-import FloatingAddButton from './components/FloatingAddButton';
 import AddProductModal from './components/AddProductModal';
 
 // Pages
@@ -13,6 +12,7 @@ import Home from './modules/home/Home.jsx';
 import Products from './modules/products/Products.jsx';
 import ProductDetails from './modules/productdetails/Productdetails.jsx';
 import Gifts from './modules/gifts/Gifts.jsx';
+import Plants from './modules/plants/Plants.jsx';
 import Cart from './modules/cart/Cart.jsx';
 import Checkout from './modules/checkout/Checkout.jsx';
 import Login from './login/Login.jsx';
@@ -77,7 +77,7 @@ function App() {
   return (
     <Router>
       <div className="main-container">
-        {isLoggedIn && <Navbar cartCount={cartItems.length} user={user} />}
+        {isLoggedIn && <Navbar cartCount={cartItems.length} user={user} onAddItem={user?.role === 'admin' ? () => setIsModalOpen(true) : null} />}
 
         <div className="content" style={{ paddingTop: isLoggedIn ? '80px' : '0' }}>
           <Routes>
@@ -85,6 +85,7 @@ function App() {
             <Route path="/products" element={isLoggedIn ? <Products onAddToCart={handleAddToCart} refreshTrigger={refreshTrigger} /> : <Navigate to="/login" replace />} />
             <Route path="/product/:id" element={isLoggedIn ? <ProductDetails onAddToCart={handleAddToCart} /> : <Navigate to="/login" replace />} />
             <Route path="/gifts" element={isLoggedIn ? <Gifts onAddToCart={handleAddToCart} refreshTrigger={refreshTrigger} /> : <Navigate to="/login" replace />} />
+            <Route path="/plants" element={isLoggedIn ? <Plants onAddToCart={handleAddToCart} refreshTrigger={refreshTrigger} /> : <Navigate to="/login" replace />} />
             <Route
               path="/cart"
               element={
@@ -133,9 +134,6 @@ function App() {
           </Routes>
         </div>
 
-        {isLoggedIn && user?.role === 'admin' && (
-          <FloatingAddButton onClick={() => setIsModalOpen(true)} />
-        )}
         {isLoggedIn && user?.role === 'admin' && (
           <AddProductModal 
             isOpen={isModalOpen} 
