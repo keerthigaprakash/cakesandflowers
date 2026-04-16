@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { getProductImage } from '../../utils/imageMapper';
 import '../productdetails/productdetails.css';
 
 const ProductDetails = ({ onAddToCart }) => {
@@ -48,7 +49,7 @@ const ProductDetails = ({ onAddToCart }) => {
           {/* Product Image */}
           <div className="product-image-section">
             <div className="product-large-image">
-              <img src={product.image} alt={product.name} />
+              <img src={getProductImage(product.image)} alt={product.name} />
             </div>
           </div>
 
@@ -60,7 +61,7 @@ const ProductDetails = ({ onAddToCart }) => {
             </div>
 
             <div className="product-price-section">
-              <span className="product-price-large">${product.price.toFixed(2)}</span>
+              <span className="product-price-large">${Number(product.price).toFixed(2)}</span>
               <span className="product-category-badge">
                 {product.category === 'cakes' && '🎂 Cakes'}
                 {product.category === 'flowers' && '🌹 Flowers'}
@@ -95,7 +96,7 @@ const ProductDetails = ({ onAddToCart }) => {
                 <button onClick={() => handleQuantityChange(quantity + 1)}>+</button>
               </div>
               <span style={{ marginLeft: 'auto', fontWeight: '600', color: 'var(--dark-purple)' }}>
-                Total: ${(product.price * quantity).toFixed(2)}
+                Total: ${(Number(product.price) * quantity).toFixed(2)}
               </span>
             </div>
 

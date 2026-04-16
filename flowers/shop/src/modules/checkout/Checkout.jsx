@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getProductImage } from '../../utils/imageMapper';
 import './Checkout.css';
 
 const Checkout = ({ cartItems = [], user, onOrderSuccess }) => {
@@ -33,7 +34,7 @@ const Checkout = ({ cartItems = [], user, onOrderSuccess }) => {
   };
 
   const calculateTotal = () => {
-    const subtotal = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+    const subtotal = cartItems.reduce((total, item) => total + (Number(item.price) * item.quantity), 0);
     const tax = subtotal * 0.05;
     const shipping = calculateShipping();
     return (subtotal + tax + shipping).toFixed(2);
@@ -82,8 +83,9 @@ const Checkout = ({ cartItems = [], user, onOrderSuccess }) => {
     }
   };
 
-  const subtotal = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0).toFixed(2);
-  const tax = (subtotal * 0.05).toFixed(2);
+  const subtotalValue = cartItems.reduce((total, item) => total + (Number(item.price) * item.quantity), 0);
+  const subtotal = subtotalValue.toFixed(2);
+  const tax = (subtotalValue * 0.05).toFixed(2);
   const shipping = calculateShipping();
   const total = calculateTotal();
 
@@ -165,9 +167,9 @@ const Checkout = ({ cartItems = [], user, onOrderSuccess }) => {
             <div style={{ marginBottom: '20px', maxHeight: '300px', overflowY: 'auto' }}>
               {cartItems.map((item) => (
                 <div key={item.id} className="summary-item" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', padding: '10px', borderRadius: '8px', background: 'var(--light-lavender)' }}>
-                  <img src={item.image} alt={item.name} style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '5px' }} />
+                  <img src={getProductImage(item.image)} alt={item.name} style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '5px' }} />
                   <span style={{ flex: 1 }}>{item.name} × {item.quantity}</span>
-                  <span>${(item.price * item.quantity).toFixed(2)}</span>
+                  <span>${(Number(item.price) * item.quantity).toFixed(2)}</span>
                 </div>
               ))}
             </div>

@@ -77,55 +77,74 @@ function App() {
   return (
     <Router>
       <div className="main-container">
-        <Navbar cartCount={cartItems.length} user={user} />
+        {isLoggedIn && <Navbar cartCount={cartItems.length} user={user} />}
 
-        <div className="content">
+        <div className="content" style={{ paddingTop: isLoggedIn ? '80px' : '0' }}>
           <Routes>
-            <Route path="/" element={<Home onAddToCart={handleAddToCart} refreshTrigger={refreshTrigger} />} />
-            <Route path="/products" element={<Products onAddToCart={handleAddToCart} refreshTrigger={refreshTrigger} />} />
-            <Route path="/product/:id" element={<ProductDetails onAddToCart={handleAddToCart} />} />
-            <Route path="/gifts" element={<Gifts onAddToCart={handleAddToCart} refreshTrigger={refreshTrigger} />} />
+            <Route path="/" element={isLoggedIn ? <Home onAddToCart={handleAddToCart} refreshTrigger={refreshTrigger} /> : <Navigate to="/login" replace />} />
+            <Route path="/products" element={isLoggedIn ? <Products onAddToCart={handleAddToCart} refreshTrigger={refreshTrigger} /> : <Navigate to="/login" replace />} />
+            <Route path="/product/:id" element={isLoggedIn ? <ProductDetails onAddToCart={handleAddToCart} /> : <Navigate to="/login" replace />} />
+            <Route path="/gifts" element={isLoggedIn ? <Gifts onAddToCart={handleAddToCart} refreshTrigger={refreshTrigger} /> : <Navigate to="/login" replace />} />
             <Route
               path="/cart"
               element={
-                <Cart
-                  cartItems={cartItems}
-                  onRemoveFromCart={handleRemoveFromCart}
-                  onUpdateQuantity={handleUpdateQuantity}
-                />
+                isLoggedIn ? (
+                  <Cart
+                    cartItems={cartItems}
+                    onRemoveFromCart={handleRemoveFromCart}
+                    onUpdateQuantity={handleUpdateQuantity}
+                  />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
               }
             />
             <Route path="/checkout" element={
-              <Checkout
-                cartItems={cartItems}
-                user={user}
-                onOrderSuccess={clearCart}
-              />}
+              isLoggedIn ? (
+                <Checkout
+                  cartItems={cartItems}
+                  user={user}
+                  onOrderSuccess={clearCart}
+                />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
             />
             <Route path="/login" element={
-              <Login
-                onLogin={handleAuthSuccess}
-                onSwitchToSignup={() => {}} // Now handled by navigation
-              />}
+              isLoggedIn ? <Navigate to="/" replace /> : (
+                <Login
+                  onLogin={handleAuthSuccess}
+                  onSwitchToSignup={() => {}} 
+                />
+              )
+            }
             />
             <Route path="/signup" element={
-              <Signup
-                onSignup={handleAuthSuccess}
-                onSwitchToLogin={() => {}} // Now handled by navigation
-              />}
+              isLoggedIn ? <Navigate to="/" replace /> : (
+                <Signup
+                  onSignup={handleAuthSuccess}
+                  onSwitchToLogin={() => {}} 
+                />
+              )
+            }
             />
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
           </Routes>
         </div>
 
-        <FloatingAddButton onClick={() => setIsModalOpen(true)} />
-        <AddProductModal 
-          isOpen={isModalOpen} 
-          onClose={() => setIsModalOpen(false)} 
-          onProductAdded={handleProductAdded} 
-        />
+        {isLoggedIn && user?.role === 'admin' && (
+          <FloatingAddButton onClick={() => setIsModalOpen(true)} />
+        )}
+        {isLoggedIn && user?.role === 'admin' && (
+          <AddProductModal 
+            isOpen={isModalOpen} 
+            onClose={() => setIsModalOpen(false)} 
+            onProductAdded={handleProductAdded} 
+          />
+        )}
 
-        <Footer />
+        {isLoggedIn && <Footer />}
       </div>
     </Router>
   );

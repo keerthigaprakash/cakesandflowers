@@ -1,18 +1,18 @@
 .floating-add-btn {
   position: fixed;
   right: 30px;
-  bottom: 30px;
-  background: linear-gradient(135deg, var(--primary-pink), var(--primary-lavender));
-  color: white;
-  border: none;
+  top: 100px;
+  background: linear-gradient(135deg, #FFD700, #FFA500); /* Golden theme for Admin */
+  color: #1a1a2e;
+  border: 2px solid #fff;
   border-radius: 50px;
   padding: 12px 24px;
   display: flex;
   align-items: center;
   gap: 10px;
-  box-shadow: 0 5px 25px rgba(255, 77, 166, 0.4);
+  box-shadow: 0 5px 25px rgba(255, 215, 0, 0.4);
   cursor: pointer;
-  z-index: 1000;
+  z-index: 999;
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 

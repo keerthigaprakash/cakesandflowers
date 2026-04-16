@@ -138,6 +138,25 @@
   }
 }
 
+.admin-badge {
+  background: #FFD700;
+  color: #1a1a2e;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  margin-right: 8px;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.user-greeting {
+  display: flex;
+  align-items: center;
+  color: #fff;
+  font-weight: 500;
+  margin-right: 15px;
+}
+
 @media (max-width: 480px) {
   .navbar {
     padding: 0 10px;

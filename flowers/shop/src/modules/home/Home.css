@@ -56,10 +56,19 @@ body {
 }
 
 .colloction-name {
-  font-size: 18px;
+  max-width: 100%;
   display: flex;
+  justify-content: center;
+  gap: 20px;
   color: var(--primary-pink);
-  margin-top: 10px;
+  margin-top: 15px;
+}
+
+.colloction-name h3 {
+  width: 150px;
+  /* Match collection img width */
+  font-size: 14px;
+  text-align: center;
 }
 
 .hero-buttons {
@@ -213,15 +222,16 @@ body {
 
 .hero-slider-track {
   display: flex;
-  width: 300%;
   height: 100%;
-  transition: transform 1s ease-in-out;
+  transition: transform 2.5s ease-in-out;
 }
 
 .hero-slider-track img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  flex-shrink: 0;
+  /* 🔥 VERY IMPORTANT */
 }
 
 /* COLLECTION */
@@ -257,7 +267,7 @@ body {
   display: flex;
   justify-content: center;
   gap: 40px;
-  
+
 }
 
 /* IMAGES */
@@ -267,7 +277,7 @@ body {
   object-fit: cover !important;
   border-radius: 15px;
   transition: var(--transition);
-  transform: ensure 3D; 
+  transform: ensure 3D;
 }
 
 
@@ -279,16 +289,17 @@ body {
 /* TEXT BELOW IMAGES */
 .love-head {
   display: flex;
-  justify-content: center;   /* center */
-  align-items: center;
-  gap: 20px;                 /* same as image gap */
-  margin-top: 10px;
+  justify-content: center;
+  gap: 40px;
+  /* Match love-img gap */
+  margin-top: 20px;
   color: var(--dark-purple);
   font-weight: 600;
 }
 
 .love-head h3 {
-  width: 120px;              /* SAME width as image */
+  width: 320px;
+  /* Match love-img width */
   text-align: center;
 }
 

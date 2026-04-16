@@ -89,7 +89,7 @@ const Home = ({ onAddToCart, refreshTrigger }) => {
 
         {/* Collections Images */}
         <div className="colloction">
-          <img src={FlowersCard} alt="flowers" />             
+          <img src={FlowersCard} alt="flowers" />
           <img src={Homepage} alt="homepage" />
           <img src={img} alt="img" />
           <img src={card} alt="card" />
@@ -101,7 +101,7 @@ const Home = ({ onAddToCart, refreshTrigger }) => {
         <div className="colloction-name">
           <h3>Flowers</h3>
           <h3>Cakes</h3>
-          <h3>Gifts</h3>  
+          <h3>Gifts</h3>
           <h3>Combos</h3>
           <h3>Plants</h3>
           <h3>Same Day Delivery</h3>
@@ -118,24 +118,24 @@ const Home = ({ onAddToCart, refreshTrigger }) => {
       <section className="shop-love">
         <h2>Shop By Occasions & Relations</h2>
         <p>Surprise Your Loved Ones</p>
-         </section><br/>
-        <div className="love-img">
-          <img src={birthday} alt="birthday" />
-          <img src={anniversary} alt="anniversary" />
-          <img src={gifthim} alt="gift-for-him" />
-          <img src={gifther} alt="gift-for-her" />
-        </div><br/>
-         <div className="love-head">
-          <h3 className='gift1'>Birthday</h3>
-          <h3 className='gift2'>Anniversary</h3>
-          <h3 className='gift3'> Gift For Him</h3>
-          <h3 className='gift4'>Gift For Her</h3>
-         </div>
+      </section><br />
+      <div className="love-img">
+        <img src={birthday} alt="birthday" />
+        <img src={anniversary} alt="anniversary" />
+        <img src={gifthim} alt="gift-for-him" />
+        <img src={gifther} alt="gift-for-her" />
+      </div><br />
+      <div className="love-head">
+        <h3 className='gift1'>Birthday</h3>
+        <h3 className='gift2'>Anniversary</h3>
+        <h3 className='gift3'> Gift For Him</h3>
+        <h3 className='gift4'>Gift For Her</h3>
+      </div>
 
       {/* Categories Section */}
       <section className="categories-section">
         <h2 className="section-title">Our Collections</h2>
-        <div className="categories-grid"> 
+        <div className="categories-grid">
           <div className="category-card" onClick={() => navigate('/products?category=cakes')}>
             <div className="category-header"><img src={cake1} alt="cake" /></div>
             <div className="category-body">
@@ -145,8 +145,8 @@ const Home = ({ onAddToCart, refreshTrigger }) => {
             </div>
           </div>
 
-          
-          
+
+
 
           <div className="category-card" onClick={() => navigate('/products?category=flowers')}>
             <div className="category-header"><img src={flower1} alt="flower" /></div>
@@ -157,7 +157,7 @@ const Home = ({ onAddToCart, refreshTrigger }) => {
             </div>
           </div>
 
-            <div className="category-card" onClick={() => navigate('/products?category=flowers')}>
+          <div className="category-card" onClick={() => navigate('/products?category=flowers')}>
             <div className="category-header"><img src={plant} alt="flower" /></div>
             <div className="category-body">
               <h3 className="category-name">Beautiful Flowers</h3>
@@ -168,7 +168,7 @@ const Home = ({ onAddToCart, refreshTrigger }) => {
 
 
 
-            <div className="category-card" onClick={() => navigate('/products?category=flowers')}>
+          <div className="category-card" onClick={() => navigate('/products?category=flowers')}>
             <div className="category-header"><img src={c2} alt="flower" /></div>
             <div className="category-body">
               <h3 className="category-name">Beautiful Flowers</h3>
@@ -178,7 +178,7 @@ const Home = ({ onAddToCart, refreshTrigger }) => {
           </div>
 
 
-            <div className="category-card" onClick={() => navigate('/products?category=flowers')}>
+          <div className="category-card" onClick={() => navigate('/products?category=flowers')}>
             <div className="category-header"><img src={t1} alt="flower" /></div>
             <div className="category-body">
               <h3 className="category-name">Beautiful Flowers</h3>
@@ -188,7 +188,7 @@ const Home = ({ onAddToCart, refreshTrigger }) => {
           </div>
 
 
-            <div className="category-card" onClick={() => navigate('/products?category=flowers')}>
+          <div className="category-card" onClick={() => navigate('/products?category=flowers')}>
             <div className="category-header"><img src={sc3} alt="flower" /></div>
             <div className="category-body">
               <h3 className="category-name">Beautiful Flowers</h3>
@@ -199,7 +199,7 @@ const Home = ({ onAddToCart, refreshTrigger }) => {
 
 
 
-            <div className="category-card" onClick={() => navigate('/products?category=flowers')}>
+          <div className="category-card" onClick={() => navigate('/products?category=flowers')}>
             <div className="category-header"><img src={f3} alt="flower" /></div>
             <div className="category-body">
               <h3 className="category-name">Beautiful Flowers</h3>
@@ -210,7 +210,7 @@ const Home = ({ onAddToCart, refreshTrigger }) => {
 
 
 
-            <div className="category-card" onClick={() => navigate('/products?category=flowers')}>
+          <div className="category-card" onClick={() => navigate('/products?category=flowers')}>
             <div className="category-header"><img src={c2} alt="flower" /></div>
             <div className="category-body">
               <h3 className="category-name">Beautiful Flowers</h3>
@@ -220,7 +220,7 @@ const Home = ({ onAddToCart, refreshTrigger }) => {
           </div>
 
 
-            <div className="category-card" onClick={() => navigate('/products?category=flowers')}>
+          <div className="category-card" onClick={() => navigate('/products?category=flowers')}>
             <div className="category-header"><img src={flower1} alt="flower" /></div>
             <div className="category-body">
               <h3 className="category-name">Beautiful Flowers</h3>
@@ -230,7 +230,7 @@ const Home = ({ onAddToCart, refreshTrigger }) => {
           </div>
 
 
-            <div className="category-card" onClick={() => navigate('/products?category=flowers')}>
+          <div className="category-card" onClick={() => navigate('/products?category=flowers')}>
             <div className="category-header"><img src={flower1} alt="flower" /></div>
             <div className="category-body">
               <h3 className="category-name">Beautiful Flowers</h3>
@@ -240,7 +240,7 @@ const Home = ({ onAddToCart, refreshTrigger }) => {
           </div>
 
 
-            <div className="category-card" onClick={() => navigate('/products?category=flowers')}>
+          <div className="category-card" onClick={() => navigate('/products?category=flowers')}>
             <div className="category-header"><img src={flower1} alt="flower" /></div>
             <div className="category-body">
               <h3 className="category-name">Beautiful Flowers</h3>

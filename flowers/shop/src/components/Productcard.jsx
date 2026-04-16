@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getProductImage } from '../utils/imageMapper';
 import './Productcard.css';
 
 const ProductCard = ({ product, onAddToCart }) => {
@@ -19,13 +20,13 @@ const ProductCard = ({ product, onAddToCart }) => {
   return (
     <div className="product-card" onClick={handleClick}>
       <img 
-        src={product.image || 'https://via.placeholder.com/300x200?text=Product'} 
+        src={getProductImage(product.image)} 
         alt={product.name}
         className="product-image"
       />
       <div className="product-info">
         <h3 className="product-name">{product.name}</h3>
-        <p className="product-price">${product.price.toFixed(2)}</p>
+        <p className="product-price">${Number(product.price).toFixed(2)}</p>
         {product.description && (
           <p className="product-description">{product.description}</p>
         )}

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getProductImage } from '../../utils/imageMapper';
 import './Cart.css';
 
 const Cart = ({ cartItems = [], onRemoveFromCart, onUpdateQuantity }) => {
@@ -7,13 +8,13 @@ const Cart = ({ cartItems = [], onRemoveFromCart, onUpdateQuantity }) => {
 
   const calculateTotal = () => {
     return cartItems
-      .reduce((total, item) => total + item.price * item.quantity, 0)
+      .reduce((total, item) => total + Number(item.price) * item.quantity, 0)
       .toFixed(2);
   };
 
   const calculateSubtotal = () => {
     return cartItems
-      .reduce((total, item) => total + item.price * item.quantity, 0)
+      .reduce((total, item) => total + Number(item.price) * item.quantity, 0)
       .toFixed(2);
   };
 
@@ -36,18 +37,14 @@ const Cart = ({ cartItems = [], onRemoveFromCart, onUpdateQuantity }) => {
               {cartItems.map((item) => (
                 <div key={item.id} className="cart-item">
                   <div className="cart-item-image">
-                    {item.image ? (
-                      <img src={item.image} alt={item.name} />
-                    ) : (
-                      '📦'
-                    )}
+                    <img src={getProductImage(item.image)} alt={item.name} />
                   </div>
 
                   <div className="cart-item-details">
                     <h3>{item.name}</h3>
                     <p>Category: {item.category}</p>
                     <p className="cart-item-price">
-                      ${item.price.toFixed(2)} each
+                      ${Number(item.price).toFixed(2)} each
                     </p>
                   </div>
 
@@ -87,7 +84,7 @@ const Cart = ({ cartItems = [], onRemoveFromCart, onUpdateQuantity }) => {
                         color: 'var(--primary-pink)',
                       }}
                     >
-                      ${(item.price * item.quantity).toFixed(2)}
+                      ${(Number(item.price) * item.quantity).toFixed(2)}
                     </p>
                     <button
                       className="remove-btn"

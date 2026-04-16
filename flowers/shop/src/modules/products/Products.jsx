@@ -23,7 +23,7 @@ const Products = ({ onAddToCart, refreshTrigger }) => {
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Update selectedCategory when URL query params change
   useEffect(() => {
     const category = searchParams.get('category') || '';
@@ -34,7 +34,7 @@ const Products = ({ onAddToCart, refreshTrigger }) => {
     const fetchProducts = async () => {
       setLoading(true);
       try {
-        const url = selectedCategory && selectedCategory !== 'all' 
+        const url = selectedCategory && selectedCategory !== 'all'
           ? `http://127.0.0.1:5000/api/home/products?category=${selectedCategory}`
           : 'http://127.0.0.1:5000/api/home/products';
         const response = await fetch(url);

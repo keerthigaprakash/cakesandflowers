@@ -27,13 +27,18 @@ const Navbar = ({ cartCount = 0, user }) => {
       </ul>
 
       <div className="navbar-icons">
-        {user && <span className="user-greeting">Hi, {user.name || 'User'}! </span>}
+        {user && (
+          <span className="user-greeting">
+            {user.role === 'admin' && <span className="admin-badge">ADMIN 👑</span>}
+            Hi, {user.name || 'User'}! 
+          </span>
+        )}
         <Link to="/cart" className="navbar-icon">
           🛒
           {cartCount > 0 && <span className="cart-count">{cartCount}</span>}
         </Link>
-        <Link to="/login" className="navbar-icon">
-          👤
+        <Link to="/login" className="navbar-icon" title={user?.role === 'admin' ? 'Admin Profile' : 'Profile'}>
+          {user?.role === 'admin' ? '👑' : '👤'}
         </Link>
       </div>
     </nav>
