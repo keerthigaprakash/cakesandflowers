@@ -28,23 +28,25 @@ import gifther from '../../assets/gifther.avif';
 
 import './Home.css';
 
-const Home = ({ onAddToCart }) => {
+const Home = ({ onAddToCart, refreshTrigger }) => {
   const navigate = useNavigate();
+  const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const featuredProducts = [
-    { id: 1, name: 'Chocolate Truffle Cake', price: 45, category: 'cakes', description: 'Rich and decadent chocolate cake', image: cake1 },
-    { id: 2, name: 'Red Rose Bouquet', price: 60, category: 'flowers', description: 'Beautiful red roses arrangement', image: flower1 },
-    { id: 3, name: 'Teddy Bear Gift', price: 35, category: 'gifts', description: 'Cute teddy bear for special ones', image: t1 },
-    { id: 4, name: 'Vanilla Cake', price: 40, category: 'cakes', description: 'Classic vanilla cake with cream', image: gift1 },
-    { id: 5, name: 'Sunflower Bundle', price: 55, category: 'flowers', description: 'Bright sunflowers for joy', image: f3 },
-    { id: 6, name: 'Chocolate Box', price: 30, category: 'gifts', description: 'Premium chocolates collection', image: c2 },
-    { id: 7, name: 'Strawberry Shortcake', price: 50, category: 'cakes', description: 'Fresh strawberries with fluffy cake', image: sc1 },
-    { id: 8, name: 'Tulip Mix', price: 50, category: 'flowers', description: 'Colorful tulips arrangement', image: sc2 },
-    { id: 9, name: 'Luxury Gift Set', price: 75, category: 'gifts', description: 'Premium gift set with curated items', image: sc3 },
-    { id: 10, name: 'Red Velvet Cake', price: 48, category: 'cakes', description: 'Elegant red velvet with cream cheese frosting', image: cake1 },
-    { id: 11, name: 'White Lily Arrangement', price: 65, category: 'flowers', description: 'Elegant white lilies with greenery', image: flower1 },
-    { id: 12, name: 'Perfume Gift Set', price: 55, category: 'gifts', description: 'Luxurious perfume collection for special occasions', image: t1 },
-  ];
+  useEffect(() => {
+    const fetchFeatured = async () => {
+      try {
+        const response = await fetch('http://127.0.0.1:5000/api/home/featured');
+        const data = await response.json();
+        setFeaturedProducts(data.data || []);
+      } catch (err) {
+        console.error('Failed to fetch featured products:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchFeatured();
+  }, [refreshTrigger]);
 
   const handleAddToCart = (product) => {
     if (onAddToCart) onAddToCart(product);
@@ -261,11 +263,19 @@ const Home = ({ onAddToCart }) => {
       {/* Featured Products Section */}
       <section className="featured-section">
         <h2 className="section-title">Featured Products</h2>
-        <div className="products-grid">
-          {featuredProducts.map((product) => (
-            <ProductCard key={product.id} product={product} onAddToCart={handleAddToCart} />
-          ))}
-        </div>
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: '40px', color: '#fff' }}>Loading featured items... 🌸</div>
+        ) : (
+          <div className="products-grid">
+            {featuredProducts.length > 0 ? (
+              featuredProducts.map((product) => (
+                <ProductCard key={product.id} product={product} onAddToCart={handleAddToCart} />
+              ))
+            ) : (
+              <p style={{ textAlign: 'center', color: '#aaa', width: '100%', gridColumn: '1/-1' }}>No featured products available.</p>
+            )}
+          </div>
+        )}
         <button className="view-all-btn" onClick={() => navigate('/products')}>View All Products →</button>
       </section>
     </div>

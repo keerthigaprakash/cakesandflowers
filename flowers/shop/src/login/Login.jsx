@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import './Login.css';
 
-const Login = ({ onLogin, onSwitchToSignup }) => {
+const Login = ({ onLogin }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -13,7 +15,7 @@ const Login = ({ onLogin, onSwitchToSignup }) => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:5000/api/home/auth/login', {
+      const response = await fetch('http://127.0.0.1:5000/api/home/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -24,7 +26,8 @@ const Login = ({ onLogin, onSwitchToSignup }) => {
       const data = await response.json();
 
       if (data.success) {
-        onLogin(email);
+        onLogin(data.user);
+        navigate('/');
       } else {
         setError(data.message || 'Invalid email or password');
       }
@@ -36,7 +39,8 @@ const Login = ({ onLogin, onSwitchToSignup }) => {
   };
 
   const handleGuestCheckout = () => {
-    onLogin('Guest');
+    onLogin({ name: 'Guest', role: 'guest' });
+    navigate('/');
   };
 
   return (
@@ -91,7 +95,7 @@ const Login = ({ onLogin, onSwitchToSignup }) => {
         </button>
 
         <div className="signup-link">
-          Don't have an account? <a href="#" onClick={(e) => { e.preventDefault(); onSwitchToSignup(); }}>Sign Up here</a>
+          Don't have an account? <Link to="/signup">Sign Up here</Link>
         </div>
       </div>
     </div>

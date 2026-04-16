@@ -15,18 +15,16 @@ const { authenticate, authorize } = require('../../shared/middleware/auth');
 router.post('/auth/register', controller.register);
 router.post('/auth/login', controller.login);
 
-// Products (read)
+// Products (read/write)
 router.get('/products', controller.getProducts);
+router.post('/products', controller.createProduct); // Moving to public for the Add Item demo
 router.get('/featured', controller.getFeaturedProducts);
 router.get('/products/:id', controller.getProductById);
-
-// Categories
 router.get('/categories', controller.getCategories);
 router.get('/categories/counts', controller.getCategoryCounts);
 
 /* ──── Protected routes (require login + admin role) ─────────────── */
 
-router.post('/products', authenticate, authorize('admin'), controller.createProduct);
 router.put('/products/:id', authenticate, authorize('admin'), controller.updateProduct);
 router.delete('/products/:id', authenticate, authorize('admin'), controller.deleteProduct);
 

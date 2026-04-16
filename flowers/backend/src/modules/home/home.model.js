@@ -9,11 +9,8 @@ const { pool } = require('../../config/db');
 
 /* ────────────────────────────── Products ────────────────────────────── */
 
-/**
- * Retrieve all products, optionally filtered by category.
- */
 const getAllProducts = async (category) => {
-  let query = 'SELECT * FROM products';
+  let query = 'SELECT *, image_key AS image FROM products';
   const params = [];
 
   if (category && category !== 'all') {
@@ -31,7 +28,7 @@ const getAllProducts = async (category) => {
  */
 const getFeaturedProducts = async () => {
   const { rows } = await pool.query(
-    'SELECT * FROM products ORDER BY created_at DESC LIMIT 12'
+    'SELECT *, image_key AS image FROM products ORDER BY created_at DESC LIMIT 12'
   );
   return rows;
 };
@@ -40,7 +37,7 @@ const getFeaturedProducts = async () => {
  * Retrieve a single product by its ID.
  */
 const getProductById = async (id) => {
-  const { rows } = await pool.query('SELECT * FROM products WHERE id = $1', [id]);
+  const { rows } = await pool.query('SELECT *, image_key AS image FROM products WHERE id = $1', [id]);
   return rows[0] || null;
 };
 

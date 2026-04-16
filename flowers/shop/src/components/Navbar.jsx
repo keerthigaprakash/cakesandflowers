@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import './Navbar.css';
 import logo from '../assets/logo.png';
 
-const Navbar = ({ cartCount = 0 }) => {
+const Navbar = ({ cartCount = 0, user }) => {
   return (
     <nav className="navbar">
       <div className="logo">
@@ -27,6 +27,7 @@ const Navbar = ({ cartCount = 0 }) => {
       </ul>
 
       <div className="navbar-icons">
+        {user && <span className="user-greeting">Hi, {user.name || 'User'}! </span>}
         <Link to="/cart" className="navbar-icon">
           🛒
           {cartCount > 0 && <span className="cart-count">{cartCount}</span>}

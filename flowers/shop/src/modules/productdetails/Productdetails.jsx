@@ -1,121 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import '../productdetails/productdetails.css';
-import c1 from '../../assets/c1.jpg';
-import c2 from '../../assets/c2.jpg';
-import cake1 from '../../assets/cake1.jpg';
-import cake2 from '../../assets/cake2.jpg';
-import f2 from '../../assets/f2.jpg';
-import f3 from '../../assets/f3.jpg';
-import f4 from '../../assets/f4.jpg';
-import f5 from '../../assets/f5.jpg';
 
 const ProductDetails = ({ onAddToCart }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [quantity, setQuantity] = useState(1);
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Sample product details
-  const productDetailsData = {
-    1: {
-      id: 1,
-      name: 'Chocolate Truffle Cake',
-      price: 45,
-      category: 'cakes',
-      rating: 4.8,
-      reviews: 245,
-      description: 'Indulge in our rich and decadent chocolate truffle cake. Made with premium Belgian chocolate and topped with chocolate truffles.',
-      fullDescription: 'This exquisite chocolate truffle cake is perfect for chocolate lovers. Each slice melts in your mouth with layers of chocolate sponge, silky chocolate mousse, and crispy chocolate truffles.',
-      features: ['Serves 6-8 people', 'Made with premium Belgian chocolate', 'No artificial colors', 'Available for same-day delivery', 'Customizable message'],
-      image:c1,
-    },
-    2: {
-      id: 2,
-      name: 'Red Rose Bouquet',
-      price: 60,
-      category: 'flowers',
-      rating: 4.9,
-      reviews: 312,
-      description: 'Beautiful arrangement of 12 fresh red roses, carefully selected and wrapped with love.',
-      fullDescription: 'Our exclusive red rose bouquet features 12 premium long-stem roses hand-picked from the finest growers. Each bouquet is wrapped in elegant packaging.',
-      features: ['12 premium red roses', 'Fresh and fragrant', 'Includes free vase', 'Free greeting card', 'Same-day delivery available'],
-      image: c2,
-    },
-    3: {
-      id: 3,
-      name: 'Teddy Bear Gift',
-      price: 35,
-      category: 'gifts',
-      rating: 4.7,
-      reviews: 189,
-      description: 'Adorable stuffed teddy bear, perfect for any occasion.',
-      fullDescription: 'A soft and cuddly teddy bear that makes the perfect gift for loved ones. Made with premium quality plush material.',
-      features: ['Soft premium plush', 'Hypoallergenic', '12 inches tall', 'Perfect for all ages', 'Gift-wrapped packaging'],
-      image: cake1,
-    },
-    4: {
-      id: 4,
-      name: 'Get Well Soon Package',
-      price: 80,
-      category: 'gifts',
-      rating: 4.6,
-      reviews: 156,
-      description: 'Comforting cake and cheerful flowers',
-      fullDescription: 'A thoughtful gift to brighten someone\'s day. Includes a comforting cake and cheerful flowers.',
-      features: ['Delightful cake', 'Cheerful flowers', 'Free personalized message', 'Same-day delivery available'],
-      image: f2,
-    },
-    5: {
-      id: 5,
-      name: 'Anniversary Delight',
-      price: 110,
-      category: 'gifts',
-      rating: 4.9,
-      reviews: 98,
-      description: 'Elegant flowers with a decadent cake',
-      fullDescription: 'Celebrate your special day with our Anniversary Delight package, featuring elegant flowers and a decadent cake.',
-      features: ['Elegant flower arrangement', 'Decadent cake', 'Free anniversary card', 'Same-day delivery available'],
-      image: cake2,
-    },
-    6: {
-      id: 6,
-      name: 'Sunflower Bundle',   
-      price: 55,
-      category: 'flowers',
-      rating: 4.8,
-      reviews: 210,
-      description: 'Bright sunflowers for joy',
-      fullDescription: 'Our vibrant sunflower bundle is sure to bring joy and sunshine to any occasion. Each bouquet includes 10 fresh sunflowers.',
-      features: ['10 fresh sunflowers', 'Bright and cheerful', 'Includes free vase', 'Free greeting card', 'Same-day delivery available'],
-      image: f3,
-    },
-    7: {
-      id: 7,
-      name: 'Tulip Mix',
-      price: 50,
-      category: 'flowers',
-      rating: 4.7,
-      reviews: 175,
-      description: 'Colorful tulips arrangement',
-      fullDescription: 'A beautiful mix of colorful tulips, perfect for brightening up any space. Each bouquet includes 15 fresh tulips in various colors.',
-      features: ['15 fresh tulips', 'Colorful mix', 'Includes free vase', 'Free greeting card', 'Same-day delivery available'],
-      image: f4,
-    },
-      8: {  
-      id: 8,
-      name: 'Chocolate Box',
-      price: 30,
-      category: 'gifts',
-      rating: 4.5,
-      reviews: 120,
-      description: 'Premium chocolates collection',
-      fullDescription: 'Indulge in our premium chocolates collection, featuring a variety of rich and decadent chocolates made with the finest ingredients.',
-      features: ['Assorted premium chocolates', 'Made with high-quality ingredients', 'Perfect for gifting', 'Gift-wrapped packaging', 'Same-day delivery available'],
-      image: f5,
-      },
-     };
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        const response = await fetch(`http://127.0.0.1:5000/api/home/products/${id}`);
+        const data = await response.json();
+        setProduct(data.data);
+      } catch (err) {
+        console.error('Failed to fetch product details:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProduct();
+  }, [id]);
 
-  const product = productDetailsData[id] || productDetailsData[1];
+  if (loading) return <div style={{ textAlign: 'center', padding: '100px', color: 'white' }}>Loading product details... 🎂</div>;
+  if (!product) return <div style={{ textAlign: 'center', padding: '100px', color: 'white' }}>Product not found. 🌹</div>;
 
   const handleQuantityChange = (value) => {
     if (value >= 1) {

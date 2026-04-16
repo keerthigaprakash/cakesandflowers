@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import './Login.css';
 
-const Signup = ({ onSignup, onSwitchToLogin }) => {
+const Signup = ({ onSignup }) => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -20,7 +22,7 @@ const Signup = ({ onSignup, onSwitchToLogin }) => {
 
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:5000/api/home/auth/register', {
+      const response = await fetch('http://127.0.0.1:5000/api/home/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -31,8 +33,8 @@ const Signup = ({ onSignup, onSwitchToLogin }) => {
       const data = await response.json();
 
       if (data.success) {
-        // Automatically log in after signup or redirect to login
-        onSignup(email);
+        onSignup(data.user);
+        navigate('/');
       } else {
         setError(data.message || 'Registration failed');
       }
@@ -108,7 +110,7 @@ const Signup = ({ onSignup, onSwitchToLogin }) => {
         </form>
 
         <div className="signup-link">
-          Already have an account? <a href="#" onClick={(e) => { e.preventDefault(); onSwitchToLogin(); }}>Login here</a>
+          Already have an account? <Link to="/login">Login here</Link>
         </div>
       </div>
     </div>

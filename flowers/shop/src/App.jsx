@@ -21,6 +21,8 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
   const [showSignup, setShowSignup] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   // Add item to cart
   const handleAddToCart = (product) => {
@@ -66,34 +68,21 @@ function App() {
     setIsLoggedIn(true);
   };
 
-  if (!isLoggedIn) {
-    if (showSignup) {
-      return (
-        <Signup
-          onSignup={handleAuthSuccess}
-          onSwitchToLogin={() => setShowSignup(false)}
-        />
-      );
-    }
-    return (
-      <Login
-        onLogin={handleAuthSuccess}
-        onSwitchToSignup={() => setShowSignup(true)}
-      />
-    );
-  }
+  const handleProductAdded = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };
 
   return (
     <Router>
       <div className="main-container">
-        <Navbar cartCount={cartItems.length} />
+        <Navbar cartCount={cartItems.length} user={user} />
 
         <div className="content">
           <Routes>
-            <Route path="/" element={<Home onAddToCart={handleAddToCart} />} />
-            <Route path="/products" element={<Products onAddToCart={handleAddToCart} />} />
+            <Route path="/" element={<Home onAddToCart={handleAddToCart} refreshTrigger={refreshTrigger} />} />
+            <Route path="/products" element={<Products onAddToCart={handleAddToCart} refreshTrigger={refreshTrigger} />} />
             <Route path="/product/:id" element={<ProductDetails onAddToCart={handleAddToCart} />} />
-            <Route path="/gifts" element={<Gifts onAddToCart={handleAddToCart} />} />
+            <Route path="/gifts" element={<Gifts onAddToCart={handleAddToCart} refreshTrigger={refreshTrigger} />} />
             <Route
               path="/cart"
               element={
@@ -111,9 +100,28 @@ function App() {
                 onOrderSuccess={clearCart}
               />}
             />
+            <Route path="/login" element={
+              <Login
+                onLogin={handleAuthSuccess}
+                onSwitchToSignup={() => {}} // Now handled by navigation
+              />}
+            />
+            <Route path="/signup" element={
+              <Signup
+                onSignup={handleAuthSuccess}
+                onSwitchToLogin={() => {}} // Now handled by navigation
+              />}
+            />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
+
+        <FloatingAddButton onClick={() => setIsModalOpen(true)} />
+        <AddProductModal 
+          isOpen={isModalOpen} 
+          onClose={() => setIsModalOpen(false)} 
+          onProductAdded={handleProductAdded} 
+        />
 
         <Footer />
       </div>
