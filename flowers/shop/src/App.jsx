@@ -5,14 +5,16 @@ import './App.css';
 // Components
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import FloatingAddButton from './components/FloatingAddButton';
+import AddProductModal from './components/AddProductModal';
 
 // Pages
-import Home from './modules/home/Home';
-import Products from './modules/products/Products';
-import ProductDetails from './modules/productDetails/ProductDetails.jsx';
-import Gifts from './modules/gifts/Gifts';
-import Cart from './modules/cart/Cart';
-import Checkout from './modules/checkout/Checkout';
+import Home from './modules/home/Home.jsx';
+import Products from './modules/products/Products.jsx';
+import ProductDetails from './modules/productdetails/Productdetails.jsx';
+import Gifts from './modules/gifts/Gifts.jsx';
+import Cart from './modules/cart/Cart.jsx';
+import Checkout from './modules/checkout/Checkout.jsx';
 import Login from './login/Login.jsx';
 import Signup from './login/Signup.jsx';
 

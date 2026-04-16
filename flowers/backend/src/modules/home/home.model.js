@@ -9,6 +9,9 @@ const { pool } = require('../../config/db');
 
 /* ────────────────────────────── Products ────────────────────────────── */
 
+/**
+ * Retrieve all products, optionally filtered by category.
+ */
 const getAllProducts = async (category) => {
   let query = 'SELECT *, image_key AS image FROM products';
   const params = [];
