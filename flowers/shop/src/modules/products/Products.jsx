@@ -49,9 +49,6 @@ const Products = ({ onAddToCart, refreshTrigger }) => {
     fetchProducts();
   }, [selectedCategory, refreshTrigger]);
 
-  const filteredProducts = !selectedCategory || selectedCategory === 'all' 
-    ? [] 
-    : allProducts.filter(p => p.category === selectedCategory);
 
   const handleCategoryChange = (category) => {
     setSelectedCategory(category);
