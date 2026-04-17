@@ -51,7 +51,15 @@ const getUserOrders = async (userId) => {
   return model.getOrdersByUserId(userId);
 };
 
+/**
+ * Retrieves all orders for the admin.
+ */
+const getAllOrders = async () => {
+  return model.getAllOrders();
+};
+
 module.exports = {
   placeOrder,
   getUserOrders,
+  getAllOrders,
 };

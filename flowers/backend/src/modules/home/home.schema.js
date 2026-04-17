@@ -22,7 +22,7 @@ const validateCreateProduct = (body) => {
     errors.push('Price must be a positive number.');
   }
 
-  const allowedCategories = ['cakes', 'flowers', 'gifts'];
+  const allowedCategories = ['cakes', 'flowers', 'gifts', 'plants'];
   if (!body.category || !allowedCategories.includes(body.category)) {
     errors.push(`Category is required and must be one of: ${allowedCategories.join(', ')}.`);
   }
@@ -56,7 +56,7 @@ const validateUpdateProduct = (body) => {
   }
 
   if (body.category !== undefined) {
-    const allowedCategories = ['cakes', 'flowers', 'gifts'];
+    const allowedCategories = ['cakes', 'flowers', 'gifts', 'plants'];
     if (!allowedCategories.includes(body.category)) {
       errors.push(`Category must be one of: ${allowedCategories.join(', ')}.`);
     }

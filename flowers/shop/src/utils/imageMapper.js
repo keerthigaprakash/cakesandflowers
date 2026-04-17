@@ -1,5 +1,16 @@
 // util/imageMapper.js
 import flower1 from '../assets/flower1.jpg';
+import pl1 from '../assets/pl1.jpg';
+import pl2 from '../assets/pl2.jpg';
+import pl3 from '../assets/pl3.jpg';
+import pl4 from '../assets/pl4.jpg';
+import pl5 from '../assets/pl5.jpg';
+import pl6 from '../assets/pl6.jpg';
+import pl7 from '../assets/pl7.jpg';
+import pl8 from '../assets/pl8.jpg';
+import pl9 from '../assets/pl9.jpg';
+import pl10 from '../assets/pl10.jpg';
+import pl11 from '../assets/pl11.jpg';
 import cake1 from '../assets/cake1.jpg';
 import cake2 from '../assets/cake2.jpg';
 import gift1 from '../assets/gift1.jpg';
@@ -44,7 +55,18 @@ const imageMap = {
   sc2,
   sc3,
   img,
-  cakeHome
+  cakeHome,
+  pl1,
+  pl2,
+  pl3,
+  pl4,
+  pl5,
+  pl6,
+  pl7,
+  pl8,
+  pl9,
+  pl10,
+  pl11
 };
 
 /**
@@ -53,15 +75,15 @@ const imageMap = {
  */
 export const getProductImage = (imageKey) => {
   if (!imageKey) return 'https://via.placeholder.com/300x200?text=Product';
-  
+
   // If it's a full URL, return it as is
   if (imageKey.startsWith('http') || imageKey.startsWith('https') || imageKey.startsWith('data:')) {
     return imageKey;
   }
-  
+
   // Strip extension if user entered 'cake1.jpg' instead of 'cake1'
   const key = imageKey.split('.')[0];
-  
+
   return imageMap[key] || 'https://via.placeholder.com/300x200?text=Product';
 };
 

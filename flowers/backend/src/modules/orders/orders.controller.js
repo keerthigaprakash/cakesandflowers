@@ -51,7 +51,24 @@ const getMyOrders = async (req, res) => {
   }
 };
 
+/**
+ * GET /api/orders/all
+ * Admin only
+ */
+const getAllOrders = async (req, res) => {
+  try {
+    const orders = await service.getAllOrders();
+    res.json({ success: true, data: orders });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({
+      success: false,
+      message: 'Failed to fetch all orders.'
+    });
+  }
+};
+
 module.exports = {
   placeOrder,
   getMyOrders,
+  getAllOrders,
 };

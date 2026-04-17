@@ -28,7 +28,7 @@ import gifther from '../../assets/gifther.avif';
 
 import './Home.css';
 
-const Home = ({ onAddToCart, refreshTrigger }) => {
+const Home = ({ onAddToCart, refreshTrigger, isAdmin, onDeleteSuccess }) => {
   const navigate = useNavigate();
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -269,7 +269,7 @@ const Home = ({ onAddToCart, refreshTrigger }) => {
           <div className="products-grid">
             {featuredProducts.length > 0 ? (
               featuredProducts.map((product) => (
-                <ProductCard key={product.id} product={product} onAddToCart={handleAddToCart} />
+                <ProductCard key={product.id} product={product} onAddToCart={handleAddToCart} isAdmin={isAdmin} onDeleteSuccess={onDeleteSuccess} />
               ))
             ) : (
               <p style={{ textAlign: 'center', color: '#aaa', width: '100%', gridColumn: '1/-1' }}>No featured products available.</p>

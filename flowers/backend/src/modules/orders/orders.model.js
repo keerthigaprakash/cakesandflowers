@@ -45,9 +45,6 @@ const createOrder = async ({ user_id, total, items, shipping_info }) => {
   }
 };
 
-/**
- * Get orders for a specific user.
- */
 const getOrdersByUserId = async (userId) => {
   const { rows } = await pool.query(
     'SELECT * FROM orders WHERE user_id = $1 ORDER BY id DESC',
@@ -56,7 +53,40 @@ const getOrdersByUserId = async (userId) => {
   return rows;
 };
 
+/**
+ * Get all orders along with their items and associated product info (admin only).
+ */
+const getAllOrders = async () => {
+  const { rows } = await pool.query(`
+    SELECT 
+      o.id,
+      o.total,
+      o.shipping_info,
+      o.status,
+      o.created_at,
+      u.name as customer_name,
+      u.email as customer_email,
+      json_agg(
+        json_build_object(
+          'product_id', i.product_id,
+          'quantity', i.quantity,
+          'price', i.price,
+          'product_name', p.name,
+          'product_image', p.image_key
+        )
+      ) as items
+    FROM orders o
+    LEFT JOIN users u ON o.user_id = u.id
+    LEFT JOIN order_items i ON o.id = i.order_id
+    LEFT JOIN products p ON i.product_id = p.id
+    GROUP BY o.id, u.name, u.email
+    ORDER BY o.created_at DESC
+  `);
+  return rows;
+};
+
 module.exports = {
   createOrder,
   getOrdersByUserId,
+  getAllOrders,
 };

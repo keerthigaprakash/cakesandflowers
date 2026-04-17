@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ProductCard from '../../components/Productcard';
 import './Plants.css';
 
-const Plants = ({ onAddToCart, refreshTrigger }) => {
+const Plants = ({ onAddToCart, refreshTrigger, isAdmin, onDeleteSuccess }) => {
   const [plantProducts, setPlantProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -48,6 +48,8 @@ const Plants = ({ onAddToCart, refreshTrigger }) => {
                 key={product.id}
                 product={product}
                 onAddToCart={handleAddToCart}
+                isAdmin={isAdmin}
+                onDeleteSuccess={onDeleteSuccess}
               />
             ))
           ) : (

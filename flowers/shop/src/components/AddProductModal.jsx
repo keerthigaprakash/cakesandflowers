@@ -7,8 +7,8 @@ const AddProductModal = ({ isOpen, onClose, onProductAdded }) => {
     price: '',
     category: 'cakes',
     description: '',
-    image_key: '',
   });
+  const [selectedFile, setSelectedFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -26,13 +26,23 @@ const AddProductModal = ({ isOpen, onClose, onProductAdded }) => {
 
     try {
       const token = localStorage.getItem('token') || '';
+      
+      const submitData = new FormData();
+      submitData.append('name', formData.name);
+      submitData.append('price', formData.price);
+      submitData.append('category', formData.category);
+      submitData.append('description', formData.description);
+      
+      if (selectedFile) {
+        submitData.append('image', selectedFile);
+      }
+
       const response = await fetch('http://127.0.0.1:5000/api/home/products', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: submitData,
       });
 
       const data = await response.json();
@@ -41,7 +51,8 @@ const AddProductModal = ({ isOpen, onClose, onProductAdded }) => {
         alert('Product added successfully! 🌸');
         onProductAdded();
         onClose();
-        setFormData({ name: '', price: '', category: 'cakes', description: '', image_key: '' });
+        setFormData({ name: '', price: '', category: 'cakes', description: '' });
+        setSelectedFile(null);
       } else {
         setError(data.message || 'Failed to add product');
       }
@@ -87,9 +98,17 @@ const AddProductModal = ({ isOpen, onClose, onProductAdded }) => {
           </div>
 
           <div className="form-group">
-            <label>Image URL / Key</label>
-            <input type="text" name="image_key" value={formData.image_key} onChange={handleChange} placeholder="URL or image name (e.g. cake1)" />
-            <small>Tip: Use 'cake1', 'flower1', or a full image URL</small>
+            <label>Product Image</label>
+            <input 
+              type="file" 
+              accept="image/*" 
+              onChange={(e) => {
+                if (e.target.files && e.target.files.length > 0) {
+                  setSelectedFile(e.target.files[0]);
+                }
+              }} 
+            />
+            <small>Upload a lovely picture from your device.</small>
           </div>
 
           <button type="submit" className="submit-btn" disabled={loading}>

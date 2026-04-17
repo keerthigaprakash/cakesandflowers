@@ -63,6 +63,10 @@ const getProductById = async (req, res) => {
  */
 const createProduct = async (req, res) => {
   try {
+    if (req.file) {
+      req.body.image_key = `http://127.0.0.1:5000/uploads/${req.file.filename}`;
+    }
+
     const { valid, errors } = schema.validateCreateProduct(req.body);
     if (!valid) {
       return res.status(400).json({ success: false, errors });

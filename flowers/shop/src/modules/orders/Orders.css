@@ -1,0 +1,157 @@
+.admin-orders-page {
+  padding: 40px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.orders-header {
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.orders-header h1 {
+  color: #4a2861;
+  font-size: 2.5rem;
+}
+
+.orders-loading, .orders-error, .orders-empty {
+  text-align: center;
+  padding: 50px 20px;
+  font-size: 1.2rem;
+  color: #666;
+}
+
+.orders-error {
+  color: #e74c3c;
+}
+
+.orders-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.order-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  border: 1px solid #ebebeb;
+}
+
+.order-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #f0e6fa;
+  padding-bottom: 15px;
+  margin-bottom: 15px;
+}
+
+.order-summary h3 {
+  margin: 0 0 5px 0;
+  color: #333;
+}
+
+.order-date {
+  margin: 0;
+  color: #777;
+  font-size: 0.9rem;
+}
+
+.order-summary-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.order-total {
+  font-weight: bold;
+  font-size: 1.2rem;
+  color: #2c3e50;
+}
+
+.order-status {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.order-status.pending {
+  background-color: #ffeaa7;
+  color: #d68910;
+}
+
+.order-status.completed {
+  background-color: #d5eed1;
+  color: #27ae60;
+}
+
+.order-customer-details {
+  background-color: #faf9fd;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.order-customer-details h4 {
+  margin: 0 0 10px 0;
+  color: #4a2861;
+}
+
+.order-customer-details p {
+  margin: 5px 0;
+  color: #555;
+  font-size: 0.95rem;
+}
+
+.order-items h4 {
+  margin: 0 0 15px 0;
+  color: #4a2861;
+}
+
+.items-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 15px;
+}
+
+.order-item-row {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 10px;
+  border: 1px solid #eee;
+  border-radius: 8px;
+}
+
+.item-thumbnail {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.item-name {
+  font-weight: 600;
+  color: #333;
+}
+
+.item-qty {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.item-price {
+  font-weight: 600;
+  color: #4a2861;
+}

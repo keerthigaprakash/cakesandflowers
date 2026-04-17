@@ -7,6 +7,7 @@
 
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const homeRoutes = require('./modules/home/home.routes');
 const orderRoutes = require('./modules/orders/orders.routes');
 
@@ -23,6 +24,9 @@ app.use((req, _res, next) => {
   console.log(`${new Date().toISOString()}  ${req.method}  ${req.originalUrl}`);
   next();
 });
+
+// Serve frontend uploads locally
+app.use('/uploads', express.static(path.join(__dirname, '../../uploads')));
 
 /* ──── Routes ─────────────────────────────────────────────────────── */
 

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ProductCard from '../../components/Productcard';
 import './Gifts.css';
 
-const Gifts = ({ onAddToCart, refreshTrigger }) => {
+const Gifts = ({ onAddToCart, refreshTrigger, isAdmin, onDeleteSuccess }) => {
   const [giftProducts, setGiftProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -48,6 +48,8 @@ const Gifts = ({ onAddToCart, refreshTrigger }) => {
                 key={product.id}
                 product={product}
                 onAddToCart={handleAddToCart}
+                isAdmin={isAdmin}
+                onDeleteSuccess={onDeleteSuccess}
               />
             ))
           ) : (

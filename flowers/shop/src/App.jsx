@@ -81,11 +81,11 @@ function App() {
 
         <div className="content" style={{ paddingTop: isLoggedIn ? '80px' : '0' }}>
           <Routes>
-            <Route path="/" element={isLoggedIn ? <Home onAddToCart={handleAddToCart} refreshTrigger={refreshTrigger} /> : <Navigate to="/login" replace />} />
-            <Route path="/products" element={isLoggedIn ? <Products onAddToCart={handleAddToCart} refreshTrigger={refreshTrigger} /> : <Navigate to="/login" replace />} />
-            <Route path="/product/:id" element={isLoggedIn ? <ProductDetails onAddToCart={handleAddToCart} /> : <Navigate to="/login" replace />} />
-            <Route path="/gifts" element={isLoggedIn ? <Gifts onAddToCart={handleAddToCart} refreshTrigger={refreshTrigger} /> : <Navigate to="/login" replace />} />
-            <Route path="/plants" element={isLoggedIn ? <Plants onAddToCart={handleAddToCart} refreshTrigger={refreshTrigger} /> : <Navigate to="/login" replace />} />
+            <Route path="/" element={isLoggedIn ? <Home onAddToCart={handleAddToCart} refreshTrigger={refreshTrigger} isAdmin={user?.role === 'admin'} onDeleteSuccess={handleProductAdded} /> : <Navigate to="/login" replace />} />
+            <Route path="/products" element={isLoggedIn ? <Products onAddToCart={handleAddToCart} refreshTrigger={refreshTrigger} isAdmin={user?.role === 'admin'} onDeleteSuccess={handleProductAdded} /> : <Navigate to="/login" replace />} />
+            <Route path="/product/:id" element={isLoggedIn ? <ProductDetails onAddToCart={handleAddToCart} isAdmin={user?.role === 'admin'} onDeleteSuccess={handleProductAdded} /> : <Navigate to="/login" replace />} />
+            <Route path="/gifts" element={isLoggedIn ? <Gifts onAddToCart={handleAddToCart} refreshTrigger={refreshTrigger} isAdmin={user?.role === 'admin'} onDeleteSuccess={handleProductAdded} /> : <Navigate to="/login" replace />} />
+            <Route path="/plants" element={isLoggedIn ? <Plants onAddToCart={handleAddToCart} refreshTrigger={refreshTrigger} isAdmin={user?.role === 'admin'} onDeleteSuccess={handleProductAdded} /> : <Navigate to="/login" replace />} />
             <Route
               path="/cart"
               element={
@@ -130,6 +130,13 @@ function App() {
               )
             }
             />
+            <Route path="/orders" element={
+              isLoggedIn && user?.role === 'admin' ? (
+                <Orders />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            } />
             <Route path="*" element={<Navigate to={isLoggedIn ? "/" : "/login"} replace />} />
           </Routes>
         </div>

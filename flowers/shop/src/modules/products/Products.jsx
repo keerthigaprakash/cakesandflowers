@@ -18,7 +18,7 @@ import t2 from '../../assets/t2.jpg';
 
 
 
-const Products = ({ onAddToCart, refreshTrigger }) => {
+const Products = ({ onAddToCart, refreshTrigger, isAdmin, onDeleteSuccess }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || '');
   const [products, setProducts] = useState([]);
@@ -78,6 +78,8 @@ const Products = ({ onAddToCart, refreshTrigger }) => {
                 key={product.id}
                 product={product}
                 onAddToCart={handleAddToCart}
+                isAdmin={isAdmin}
+                onDeleteSuccess={onDeleteSuccess}
               />
             ))}
           </div>
