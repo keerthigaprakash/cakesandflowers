@@ -17,7 +17,14 @@ router.post('/', controller.placeOrder);
 // This one definitely needs authentication
 router.get('/my-orders', authenticate, controller.getMyOrders);
 
-// Admin route
+// Admin routes
 router.get('/all', authenticate, authorize('admin'), controller.getAllOrders);
+router.post('/assign', authenticate, authorize('admin'), controller.assignOrder);
+router.get('/delivery-personnel', authenticate, authorize('admin'), controller.getDeliveryPersonnel);
+router.delete('/:id', authenticate, authorize('admin'), controller.cancelOrder);
+
+// Delivery personnel routes
+router.get('/assigned', authenticate, authorize('delivery'), controller.getAssignedOrders);
+router.patch('/:id/status', authenticate, controller.updateStatus); // Shared, but will restrict in UI
 
 module.exports = router;

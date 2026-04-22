@@ -85,8 +85,84 @@ const getAllOrders = async () => {
   return rows;
 };
 
+/**
+ * Update order assignment (Admin only).
+ */
+const updateOrderAssignment = async (orderId, deliveryPersonId) => {
+  const { rows } = await pool.query(
+    'UPDATE orders SET delivery_person_id = $1, status = $2 WHERE id = $3 RETURNING *',
+    [deliveryPersonId, 'shipped', orderId]
+  );
+  return rows[0];
+};
+
+/**
+ * Update order status.
+ */
+const updateOrderStatus = async (orderId, status) => {
+  const { rows } = await pool.query(
+    'UPDATE orders SET status = $1 WHERE id = $2 RETURNING *',
+    [status, orderId]
+  );
+  return rows[0];
+};
+
+/**
+ * Fetch all users with role 'delivery'.
+ */
+const getDeliveryPersonnel = async () => {
+  const { rows } = await pool.query(
+    "SELECT id, name, email FROM users WHERE role = 'delivery' ORDER BY name"
+  );
+  return rows;
+};
+
+/**
+ * Get orders assigned to a specific delivery person.
+ */
+const getAssignedOrders = async (deliveryPersonId) => {
+  const { rows } = await pool.query(`
+    SELECT 
+      o.id,
+      o.total,
+      o.shipping_info,
+      o.status,
+      o.created_at,
+      u.name as customer_name,
+      u.email as customer_email,
+      json_agg(
+        json_build_object(
+          'product_name', p.name,
+          'quantity', i.quantity
+        )
+      ) as items
+    FROM orders o
+    LEFT JOIN users u ON o.user_id = u.id
+    LEFT JOIN order_items i ON o.id = i.order_id
+    LEFT JOIN products p ON i.product_id = p.id
+    WHERE o.delivery_person_id = $1
+    GROUP BY o.id, u.name, u.email
+    ORDER BY o.created_at DESC
+  `, [deliveryPersonId]);
+  return rows;
+};
+
+/**
+ * Delete/Cancel an order (Admin only).
+ */
+const deleteOrder = async (orderId) => {
+  await pool.query('DELETE FROM order_items WHERE order_id = $1', [orderId]);
+  const { rowCount } = await pool.query('DELETE FROM orders WHERE id = $1', [orderId]);
+  return rowCount > 0;
+};
+
 module.exports = {
   createOrder,
   getOrdersByUserId,
   getAllOrders,
+  updateOrderAssignment,
+  updateOrderStatus,
+  getDeliveryPersonnel,
+  getAssignedOrders,
+  deleteOrder,
 };

@@ -4,38 +4,90 @@ import './Orders.css';
 
 const Orders = () => {
   const [orders, setOrders] = useState([]);
+  const [deliveryPersonnel, setDeliveryPersonnel] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) return;
+  const fetchOrders = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
 
-        const response = await fetch('http://127.0.0.1:5000/api/orders/all', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-          setOrders(data.data || []);
-        } else {
-          setError(data.message || 'Failed to fetch orders.');
+      const response = await fetch('http://127.0.0.1:5000/api/orders/all', {
+        headers: {
+          'Authorization': `Bearer ${token}`
         }
-      } catch (err) {
-        console.error('Error fetching orders:', err);
-        setError('Connection error while fetching orders.');
-      } finally {
-        setLoading(false);
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setOrders(data.data || []);
+      } else {
+        setError(data.message || 'Failed to fetch orders.');
       }
-    };
+    } catch (err) {
+      console.error('Error fetching orders:', err);
+      setError('Connection error while fetching orders.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  const fetchDeliveryPersonnel = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://127.0.0.1:5000/api/orders/delivery-personnel', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (data.success) setDeliveryPersonnel(data.data);
+    } catch (err) {
+      console.error('Error fetching personnel:', err);
+    }
+  };
+
+  useEffect(() => {
     fetchOrders();
+    fetchDeliveryPersonnel();
   }, []);
+
+  const handleAssign = async (orderId, deliveryPersonId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://127.0.0.1:5000/api/orders/assign', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ orderId, deliveryPersonId })
+      });
+      const data = await response.json();
+      if (data.success) {
+        fetchOrders(); // Refresh list
+      }
+    } catch (err) {
+      alert('Failed to assign delivery.');
+    }
+  };
+
+  const handleCancelOrder = async (orderId) => {
+    if (!window.confirm('Are you sure you want to cancel this order?')) return;
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://127.0.0.1:5000/api/orders/${orderId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (data.success) {
+        setOrders(prev => prev.filter(o => o.id !== orderId));
+      }
+    } catch (err) {
+      alert('Failed to cancel order.');
+    }
+  };
 
   if (loading) {
     return <div className="orders-loading">Loading orders...</div>;
@@ -43,15 +95,6 @@ const Orders = () => {
 
   if (error) {
     return <div className="orders-error">{error}</div>;
-  }
-
-  if (orders.length === 0) {
-    return (
-      <div className="orders-empty">
-        <h2>No Orders Found</h2>
-        <p>There are currently no orders in the system.</p>
-      </div>
-    );
   }
 
   return (
@@ -71,23 +114,54 @@ const Orders = () => {
             <div key={order.id} className="order-card">
               <div className="order-summary">
                 <div className="order-summary-left">
-                  <h3>Order #{order.id}</h3>
+                  <div className="order-id-row">
+                    <h3>Order #{order.id}</h3>
+                    <div className="order-actions">
+                      <button className="action-btn keep" title="Active">✔</button>
+                      <button 
+                        className="action-btn cancel" 
+                        title="Cancel Order"
+                        onClick={() => handleCancelOrder(order.id)}
+                      >
+                        ✖
+                      </button>
+                    </div>
+                  </div>
                   <p className="order-date">Placed on: {orderDate}</p>
                 </div>
                 <div className="order-summary-right">
-                  <span className="order-total">Total: ${Number(order.total).toFixed(2)}</span>
+                  <span className="order-total">${Number(order.total).toFixed(2)}</span>
                   <span className={`order-status ${order.status || 'pending'}`}>
                     {order.status || 'Pending'}
                   </span>
                 </div>
               </div>
               
-              <div className="order-customer-details">
-                <h4>Customer Details</h4>
-                <p><strong>Name:</strong> {customerName}</p>
-                {order.customer_email && <p><strong>Email:</strong> {order.customer_email}</p>}
-                <p><strong>Delivery Address:</strong> {address}</p>
-                {shipping.phone && <p><strong>Phone:</strong> {shipping.phone}</p>}
+              <div className="order-management">
+                <div className="order-customer-details">
+                  <h4>Customer Details</h4>
+                  <p><strong>Name:</strong> {customerName}</p>
+                  <p><strong>Delivery Address:</strong> {address}</p>
+                  {shipping.phone && <p><strong>Phone:</strong> {shipping.phone}</p>}
+                </div>
+
+                <div className="delivery-assignment">
+                  <h4>Delivery Assignment</h4>
+                  <div className="assignment-control">
+                    <select 
+                      defaultValue={order.delivery_person_id || ""}
+                      onChange={(e) => handleAssign(order.id, e.target.value)}
+                    >
+                      <option value="">Unassigned</option>
+                      {deliveryPersonnel.map(p => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
+                      ))}
+                    </select>
+                    {order.delivery_person_id && (
+                      <span className="assigned-badge">Assigned</span>
+                    )}
+                  </div>
+                </div>
               </div>
 
               <div className="order-items">

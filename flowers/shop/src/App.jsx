@@ -17,6 +17,8 @@ import Cart from './modules/cart/Cart.jsx';
 import Checkout from './modules/checkout/Checkout.jsx';
 import Login from './login/Login.jsx';
 import Signup from './login/Signup.jsx';
+import Orders from './modules/orders/Orders.jsx';
+import DeliveryOrders from './modules/orders/DeliveryOrders.jsx';
 
 function App() {
   const [cartItems, setCartItems] = useState([]);
@@ -133,6 +135,13 @@ function App() {
             <Route path="/orders" element={
               isLoggedIn && user?.role === 'admin' ? (
                 <Orders />
+              ) : (
+                <Navigate to="/" replace />
+              )
+            } />
+            <Route path="/delivery-orders" element={
+              isLoggedIn && user?.role === 'delivery' ? (
+                <DeliveryOrders />
               ) : (
                 <Navigate to="/" replace />
               )

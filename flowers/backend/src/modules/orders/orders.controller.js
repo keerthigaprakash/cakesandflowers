@@ -67,8 +67,81 @@ const getAllOrders = async (req, res) => {
   }
 };
 
+/**
+ * POST /api/orders/assign
+ * Admin only
+ */
+const assignOrder = async (req, res) => {
+  try {
+    const { orderId, deliveryPersonId } = req.body;
+    const order = await service.assignOrder(orderId, deliveryPersonId);
+    res.json({ success: true, data: order });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to assign order.' });
+  }
+};
+
+/**
+ * PATCH /api/orders/:id/status
+ */
+const updateStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const order = await service.updateStatus(id, status);
+    res.json({ success: true, data: order });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to update status.' });
+  }
+};
+
+/**
+ * GET /api/orders/delivery-personnel
+ * Admin only
+ */
+const getDeliveryPersonnel = async (req, res) => {
+  try {
+    const personnel = await service.getDeliveryPersonnel();
+    res.json({ success: true, data: personnel });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to fetch personnel.' });
+  }
+};
+
+/**
+ * GET /api/orders/assigned
+ * For delivery personnel
+ */
+const getAssignedOrders = async (req, res) => {
+  try {
+    const orders = await service.getAssignedOrders(req.user.id);
+    res.json({ success: true, data: orders });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to fetch assigned orders.' });
+  }
+};
+
+/**
+ * DELETE /api/orders/:id
+ * Admin only
+ */
+const cancelOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await service.cancelOrder(id);
+    res.json({ success: true, message: 'Order canceled successfully.' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to cancel order.' });
+  }
+};
+
 module.exports = {
   placeOrder,
   getMyOrders,
   getAllOrders,
+  assignOrder,
+  updateStatus,
+  getDeliveryPersonnel,
+  getAssignedOrders,
+  cancelOrder,
 };

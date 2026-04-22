@@ -90,6 +90,7 @@ const initDB = async () => {
       
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS shipping_info JSONB;
       ALTER TABLE orders ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_person_id INTEGER REFERENCES users(id);
     `);
 
     console.log("✅ Tables checked and updated successfully");

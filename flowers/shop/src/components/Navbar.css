@@ -50,6 +50,14 @@
   color: var(--primary-pink);
 }
 
+.admin-link {
+  color: #FFD700 !important; /* Gold for admin */
+}
+
+.delivery-link {
+  color: #3498db !important; /* Blue for delivery */
+}
+
 /* UNDERLINE ANIMATION */
 .navbar-item {
   position: relative;

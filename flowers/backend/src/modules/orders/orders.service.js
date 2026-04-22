@@ -58,8 +58,48 @@ const getAllOrders = async () => {
   return model.getAllOrders();
 };
 
+/**
+ * Assigns an order to a delivery person.
+ */
+const assignOrder = async (orderId, deliveryPersonId) => {
+  return model.updateOrderAssignment(orderId, deliveryPersonId);
+};
+
+/**
+ * Updates the status of an order.
+ */
+const updateStatus = async (orderId, status) => {
+  return model.updateOrderStatus(orderId, status);
+};
+
+/**
+ * Fetches all delivery personnel.
+ */
+const getDeliveryPersonnel = async () => {
+  return model.getDeliveryPersonnel();
+};
+
+/**
+ * Fetches orders assigned to a specific delivery person.
+ */
+const getAssignedOrders = async (deliveryPersonId) => {
+  return model.getAssignedOrders(deliveryPersonId);
+};
+
+/**
+ * Cancels/Deletes an order.
+ */
+const cancelOrder = async (orderId) => {
+  return model.deleteOrder(orderId);
+};
+
 module.exports = {
   placeOrder,
   getUserOrders,
   getAllOrders,
+  assignOrder,
+  updateStatus,
+  getDeliveryPersonnel,
+  getAssignedOrders,
+  cancelOrder,
 };

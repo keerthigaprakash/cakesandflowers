@@ -30,6 +30,16 @@ const Navbar = ({ cartCount = 0, user, onAddItem }) => {
         <li className="navbar-item">
           <Link to="/plants">Plants</Link>
         </li>
+        {user?.role === 'admin' && (
+          <li className="navbar-item">
+            <Link to="/orders" className="admin-link">Manage Orders</Link>
+          </li>
+        )}
+        {user?.role === 'delivery' && (
+          <li className="navbar-item">
+            <Link to="/delivery-orders" className="delivery-link">My Assignments</Link>
+          </li>
+        )}
       </ul>
 
       <div className="navbar-icons">
@@ -48,8 +58,8 @@ const Navbar = ({ cartCount = 0, user, onAddItem }) => {
           🛒
           {cartCount > 0 && <span className="cart-count">{cartCount}</span>}
         </Link>
-        <Link to="/login" className="navbar-icon" title={user?.role === 'admin' ? 'Admin Profile' : 'Profile'}>
-          {user?.role === 'admin' ? '👑' : '👤'}
+        <Link to="/login" className="navbar-icon" title={user?.role === 'admin' ? 'Admin Profile' : (user?.role === 'delivery' ? 'Delivery Profile' : 'Profile')}>
+          {user?.role === 'admin' ? '👑' : (user?.role === 'delivery' ? '🚚' : '👤')}
         </Link>
       </div>
     </nav>
