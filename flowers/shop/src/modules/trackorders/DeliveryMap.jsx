@@ -1,386 +1,544 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline } from 'react-leaflet';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline, Circle } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// Fix for default marker icons in React Leaflet
+// Fix default icons
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
-
-let DefaultIcon = L.icon({
+L.Marker.prototype.options.icon = L.icon({
   iconUrl: markerIcon,
   shadowUrl: markerShadow,
   iconSize: [25, 41],
   iconAnchor: [12, 41],
 });
-L.Marker.prototype.options.icon = DefaultIcon;
 
-// Custom Delivery Icon
+// ─── Custom Icons ──────────────────────────────────────────────
 const deliveryIcon = L.divIcon({
-  className: 'custom-delivery-marker',
+  className: '',
   html: `
-    <div class="marker-pin-delivery">
-      <span class="emoji">🚚</span>
-      <div class="pulse-ring"></div>
+    <div style="
+      position: relative;
+      width: 56px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    ">
+      <div style="
+        position: absolute;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: rgba(33, 150, 243, 0.15);
+        animation: deliveryPulse 1.8s ease-out infinite;
+      "></div>
+      <div style="
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #2196F3, #1565C0);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        box-shadow: 0 4px 15px rgba(33,150,243,0.5);
+        position: relative;
+        z-index: 2;
+        border: 3px solid white;
+      ">🚚</div>
     </div>
+    <style>
+      @keyframes deliveryPulse {
+        0% { transform: scale(1); opacity: 0.8; }
+        100% { transform: scale(2.5); opacity: 0; }
+      }
+    </style>
   `,
-  iconSize: [60, 60],
-  iconAnchor: [30, 30],
+  iconSize: [56, 56],
+  iconAnchor: [28, 28],
 });
 
-// Custom Store Icon
 const storeIcon = L.divIcon({
-  className: 'custom-store-marker',
+  className: '',
   html: `
-    <div style="background: white; border: 2px solid #FF4DA6; border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
-      🏪
-    </div>
+    <div style="
+      width: 44px; height: 44px; border-radius: 50%;
+      background: white; border: 3px solid #FF4DA6;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; box-shadow: 0 4px 12px rgba(255,77,166,0.4);
+    ">🏪</div>
   `,
-  iconSize: [45, 45],
+  iconSize: [44, 44],
   iconAnchor: [22, 22],
 });
 
-// Custom Destination Icon
 const destIcon = L.divIcon({
-  className: 'custom-dest-marker',
+  className: '',
   html: `
-    <div style="background: white; border: 2px solid #4CAF50; border-radius: 50%; width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; font-size: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
-      📍
+    <div style="position:relative; display:flex; flex-direction:column; align-items:center;">
+      <div style="
+        width: 44px; height: 44px; border-radius: 50%;
+        background: white; border: 3px solid #4CAF50;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 22px; box-shadow: 0 4px 12px rgba(76,175,80,0.4);
+      ">🏠</div>
+      <div style="width:3px;height:14px;background:#4CAF50;"></div>
     </div>
   `,
-  iconSize: [45, 45],
-  iconAnchor: [22, 45], // pin tip at bottom
+  iconSize: [44, 58],
+  iconAnchor: [22, 58],
 });
 
-// Component to dynamically control the map view
-const MapController = ({ activeCoords, trackingCoords }) => {
+// ─── Smooth Map Controller ───────────────────────────────────────
+// Animates map to follow the tracking position smoothly
+const LiveMapController = ({ coords, autoFollow }) => {
   const map = useMap();
+  const prevCoordsRef = useRef(null);
+
   useEffect(() => {
-    if (activeCoords) {
-      map.flyTo([activeCoords.lat, activeCoords.lng], 16, {
-        animate: true,
-        duration: 1.5,
-      });
-    } else if (trackingCoords) {
-      // Follow the movement smoothly
-      map.panTo([trackingCoords.lat, trackingCoords.lng], {
-        animate: true,
-        duration: 1.5,
-        noMoveStart: true
-      });
+    if (!coords || !autoFollow) return;
+
+    const prev = prevCoordsRef.current;
+    // Only pan if moved > ~5m to prevent jitter
+    if (prev) {
+      const dist = map.distance([prev.lat, prev.lng], [coords.lat, coords.lng]);
+      if (dist < 3) return;
     }
-  }, [activeCoords, trackingCoords, map]);
+
+    map.panTo([coords.lat, coords.lng], {
+      animate: true,
+      duration: 0.8,
+      easeLinearity: 0.25,
+      noMoveStart: true,
+    });
+    prevCoordsRef.current = coords;
+  }, [coords, autoFollow, map]);
+
   return null;
 };
 
-const DeliveryMap = ({ deliveryCoords, customerAddress }) => {
-  const [activeLocation, setActiveLocation] = useState(null); // 'store' | 'dest' | null
-  const [liveUserCoords, setLiveUserCoords] = useState(null); // Hardware GPS
+// Fits the map to show both store and destination simultaneously
+const BoundsController = ({ storeCoords, destCoords, active }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (!active || !storeCoords || !destCoords) return;
+    const bounds = L.latLngBounds(
+      [storeCoords.lat, storeCoords.lng],
+      [destCoords.lat, destCoords.lng]
+    );
+    map.fitBounds(bounds, { padding: [60, 60], animate: true, duration: 1.2 });
+  }, [active, storeCoords, destCoords, map]);
+  return null;
+};
 
-  // Fixed coordinates for Singanallur, Coimbatore
-  const storeCoords = { lat: 11.0018, lng: 77.0282 };
-  const [destCoords, setDestCoords] = useState({ lat: 11.0168, lng: 76.9558 }); // Default nearby destination
+// Flies to a specific point when a button is clicked
+const FlyToController = ({ target }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (target) {
+      map.flyTo([target.lat, target.lng], 16, { animate: true, duration: 1.2 });
+    }
+  }, [target, map]);
+  return null;
+};
 
-  // Geocode destination address
+// ─── Animated Marker (smoothly lerps between positions) ──────────
+const AnimatedDeliveryMarker = ({ coords }) => {
+  const markerRef = useRef(null);
+  const animFrameRef = useRef(null);
+  const prevRef = useRef(null);
+
+  useEffect(() => {
+    if (!coords || !markerRef.current) return;
+
+    const target = L.latLng(coords.lat, coords.lng);
+
+    if (!prevRef.current) {
+      markerRef.current.setLatLng(target);
+      prevRef.current = target;
+      return;
+    }
+
+    const start = markerRef.current.getLatLng();
+    const startTime = performance.now();
+    const DURATION = 800; // ms
+
+    const animate = (now) => {
+      const elapsed = now - startTime;
+      const t = Math.min(elapsed / DURATION, 1);
+      // Ease out cubic
+      const ease = 1 - Math.pow(1 - t, 3);
+
+      const lat = start.lat + (target.lat - start.lat) * ease;
+      const lng = start.lng + (target.lng - start.lng) * ease;
+      markerRef.current.setLatLng([lat, lng]);
+
+      if (t < 1) {
+        animFrameRef.current = requestAnimationFrame(animate);
+      } else {
+        prevRef.current = target;
+      }
+    };
+
+    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    animFrameRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    };
+  }, [coords]);
+
+  if (!coords) return null;
+
+  return (
+    <Marker
+      ref={markerRef}
+      position={[coords.lat, coords.lng]}
+      icon={deliveryIcon}
+    >
+      <Popup>
+        <b style={{ color: '#2196F3' }}>🚚 Delivery in Progress</b><br />
+        Lat: {coords.lat.toFixed(5)}<br />
+        Lng: {coords.lng.toFixed(5)}
+      </Popup>
+    </Marker>
+  );
+};
+
+// ─── Main DeliveryMap Component ──────────────────────────────────
+const DeliveryMap = ({ deliveryCoords, customerAddress, socketEmitter = null, orderId = null }) => {
+  const storeCoords = { lat: 11.0018, lng: 77.0282 }; // Singanallur, Coimbatore
+
+  const [destCoords, setDestCoords] = useState({ lat: 11.0168, lng: 76.9558 });
+  const [liveCoords, setLiveCoords] = useState(null);        // Device GPS
+  const [accuracy, setAccuracy] = useState(null);             // GPS accuracy in metres
+  const [pathHistory, setPathHistory] = useState([storeCoords]);
+  const [autoFollow, setAutoFollow] = useState(false);   // start in overview mode
+  const [fitAll, setFitAll] = useState(true);             // show both markers on load
+  const [flyTarget, setFlyTarget] = useState(null);
+  const [gpsStatus, setGpsStatus] = useState('waiting'); // 'waiting' | 'active' | 'error'
+  const watchIdRef = useRef(null);
+
+  // Effective position: prefer live device GPS > socket props
+  const activeCoords = liveCoords || deliveryCoords;
+
+  // ── Geocode destination ────────────────────────────────────────
   useEffect(() => {
     if (!customerAddress) return;
 
-    const isValidRegionAndCity = (item, originalInput) => {
-      if (!item) return false;
-      const address = item.address || {};
-      const displayName = (item.display_name || '').toLowerCase();
-      
-      // Strictly resolve within Tamil Nadu, India
-      const state = (address.state || '').toLowerCase();
-      const country = (address.country || '').toLowerCase();
-      const isTamilNadu = state.includes('tamil nadu') || displayName.includes('tamil nadu');
-      const isIndia = country.includes('india') || displayName.includes('india');
-      
-      if (!isTamilNadu || !isIndia) return false;
-
-      // Extract city/town from the result and ensure it matches the INTENDED city
-      const resultCity = (address.city || address.town || address.village || address.county || '').toLowerCase();
-      const inputLower = (originalInput || '').toLowerCase();
-      
-      // The destination must belong to the intended city (validate against original input)
-      if (resultCity && !inputLower.includes(resultCity)) {
-        return false;
-      }
-
-      return true;
+    const formatQuery = (raw) => {
+      let q = raw.replace(/[\n\r]/g, ', ').replace(/\s+/g, ' ').trim();
+      if (!/bus stand/i.test(q)) q += ' Bus Stand';
+      if (!/tamil nadu/i.test(q)) q += ', Tamil Nadu';
+      if (!/india/i.test(q)) q += ', India';
+      return q;
     };
 
-    const formatAddress = (rawAddress) => {
-      if (!rawAddress) return '';
-      // Basic cleaning
-      let cleanAddress = rawAddress.replace(/[\n\r]/g, ', ').replace(/\s+/g, ' ').trim();
-      
-      // Extract pincode (6 digits in India)
-      const pinMatch = cleanAddress.match(/\b\d{6}\b/);
-      const pincode = pinMatch ? pinMatch[0] : '';
-      if (pincode) {
-        cleanAddress = cleanAddress.replace(pincode, '').replace(/,\s*$/, '').trim();
-      }
-
-      // Clean up multiple commas
-      cleanAddress = cleanAddress.replace(/,(\s*,)+/g, ',').replace(/,\s*$/, '');
-
-      const lower = cleanAddress.toLowerCase();
-      
-      // Intelligently resolve to central landmark (e.g., Bus Stand) to avoid random matches
-      if (!lower.includes('bus stand')) {
-        cleanAddress += ' bus stand';
-      }
-
-      // Automatically refine if unclear by ensuring essential components are present
-      if (!lower.includes('tamil nadu')) cleanAddress += ', Tamil Nadu';
-      if (!lower.includes('india')) cleanAddress += ', India';
-
-      // Re-append pincode at the end
-      if (pincode) cleanAddress += ` ${pincode}`;
-      
-      // Final formatting cleanup
-      return cleanAddress.replace(/,(\s*,)+/g, ',').replace(/,\s*$/, '').trim();
+    const isValid = (item) => {
+      const dn = (item.display_name || '').toLowerCase();
+      const state = (item.address?.state || '').toLowerCase();
+      return (
+        (state.includes('tamil nadu') || dn.includes('tamil nadu')) &&
+        (dn.includes('india') || (item.address?.country || '').toLowerCase().includes('india'))
+      );
     };
 
-    const fetchGeocode = async () => {
+    const geocode = async () => {
       try {
-        // First clean and format the input into a structured address with central landmark bias
-        const structuredAddress = formatAddress(customerAddress);
-        
-        let query = encodeURIComponent(structuredAddress);
-        let response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&addressdetails=1&countrycodes=in&limit=5`);
-        let data = await response.json();
-        
-        // Pass the original customerAddress to validate the intended city dynamically
-        let validResult = Array.isArray(data) ? data.find(item => isValidRegionAndCity(item, customerAddress)) : null;
-
-        if (validResult) {
-          setDestCoords({
-            lat: parseFloat(validResult.lat),
-            lng: parseFloat(validResult.lon)
-          });
-          setActiveLocation('dest');
-        } else {
-          console.warn("Geocoding failed: Location not found using structured address, or city name mismatch.");
+        const q = encodeURIComponent(formatQuery(customerAddress));
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${q}&addressdetails=1&countrycodes=in&limit=5`
+        );
+        const data = await res.json();
+        const match = Array.isArray(data) ? data.find(isValid) : null;
+        if (match) {
+          setDestCoords({ lat: parseFloat(match.lat), lng: parseFloat(match.lon) });
         }
-      } catch (error) {
-        console.error("Geocoding error:", error);
+      } catch (e) {
+        console.error('Geocode error:', e);
       }
     };
 
-    fetchGeocode();
+    geocode();
   }, [customerAddress]);
 
-  // Track continuous movement traveled
-  const [pathHistory, setPathHistory] = useState([storeCoords]);
-
-  // Priority to hardware Live GPS, fallback to provided props
-  const trackingCoords = liveUserCoords || deliveryCoords;
-
-  // Initialize browser Geolocation native tracker
+  // ── Device GPS Watcher ─────────────────────────────────────────
   useEffect(() => {
-    let watchId;
-    if ("geolocation" in navigator) {
-      console.log('📍 Initializing Native High-Accuracy GPS Tracking...');
-      watchId = navigator.geolocation.watchPosition(
-        (position) => {
-          const newCoords = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          };
-          console.log('📍 Hardware GPS update:', newCoords);
-          setLiveUserCoords(newCoords);
-        },
-        (error) => {
-          console.error("Hardware Geolocation Error:", error);
-        },
-        {
-          enableHighAccuracy: true,
-          maximumAge: 0,
-          timeout: 10000
-        }
-      );
+    if (!('geolocation' in navigator)) {
+      setGpsStatus('error');
+      return;
     }
+
+    setGpsStatus('waiting');
+
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      (pos) => {
+        const newCoords = {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        };
+        setAccuracy(Math.round(pos.coords.accuracy));
+        setLiveCoords(newCoords);
+        setGpsStatus('active');
+
+        // Broadcast to other viewers via socket
+        if (socketEmitter && orderId) {
+          socketEmitter('updateDeliveryLocation', {
+            orderId,
+            lat: newCoords.lat,
+            lng: newCoords.lng,
+          });
+        }
+      },
+      (err) => {
+        console.warn('GPS Error:', err.message);
+        setGpsStatus('error');
+      },
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
+    );
+
     return () => {
-      if (watchId && navigator.geolocation) {
-        navigator.geolocation.clearWatch(watchId);
-      }
+      if (watchIdRef.current) navigator.geolocation.clearWatch(watchIdRef.current);
     };
-  }, []);
+  }, [socketEmitter, orderId]);
 
-  // Track the history of the tracked coordinates seamlessly
+  // ── Accumulate Path History ────────────────────────────────────
   useEffect(() => {
-    if (trackingCoords) {
-      setPathHistory(prev => {
-        const last = prev[prev.length - 1];
-        if (last && last.lat === trackingCoords.lat && last.lng === trackingCoords.lng) {
-          return prev;
-        }
-        return [...prev, trackingCoords];
-      });
-    }
-  }, [trackingCoords]);
+    if (!activeCoords) return;
+    setPathHistory((prev) => {
+      const last = prev[prev.length - 1];
+      if (last && last.lat === activeCoords.lat && last.lng === activeCoords.lng) return prev;
+      // Keep max 200 points to avoid memory issues
+      const updated = [...prev, activeCoords];
+      return updated.length > 200 ? updated.slice(updated.length - 200) : updated;
+    });
+  }, [activeCoords]);
 
-  // Default to store if no trackingCoords yet
-  const initialCenter = trackingCoords ? [trackingCoords.lat, trackingCoords.lng] : [storeCoords.lat, storeCoords.lng];
+  const handleFlyStore = () => { setFlyTarget(storeCoords); setAutoFollow(false); setFitAll(false); };
+  const handleFlyDest = () => { setFlyTarget(destCoords); setAutoFollow(false); setFitAll(false); };
+  const handleFollowDriver = () => { setAutoFollow(true); setFitAll(false); setFlyTarget(null); };
+  const handleFitAll = () => { setFitAll(true); setAutoFollow(false); setFlyTarget(null); };
 
-  const handleStoreClick = () => {
-    setActiveLocation('store');
-  };
+  // Re-fit when destination updates (after geocode resolves)
+  useEffect(() => { setFitAll(true); }, [destCoords]);
 
-  const handleDestClick = () => {
-    setActiveLocation('dest');
-  };
-
-  // Determine which coords to focus on
-  const getActiveCoords = () => {
-    if (activeLocation === 'store') return storeCoords;
-    if (activeLocation === 'dest') return destCoords;
-    return null;
-  };
-
-  // Refs for Opening Popups Programmatically
-  const storeMarkerRef = useRef(null);
-  const destMarkerRef = useRef(null);
-
-  useEffect(() => {
-    if (activeLocation === 'store' && storeMarkerRef.current) {
-      storeMarkerRef.current.openPopup();
-    } else if (activeLocation === 'dest' && destMarkerRef.current) {
-      destMarkerRef.current.openPopup();
-    }
-  }, [activeLocation]);
+  // Mid-point for initial center so both markers are roughly visible
+  const initialCenter = [
+    (storeCoords.lat + destCoords.lat) / 2,
+    (storeCoords.lng + destCoords.lng) / 2,
+  ];
 
   return (
-    <div style={{ margin: '25px 0' }}>
-      <div className="delivery-route-info" style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'space-between',
-        padding: '15px 20px',
+    <div style={{ fontFamily: 'inherit' }}>
+      {/* ── Route Info Bar ── */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        padding: '14px 20px',
         background: 'white',
-        borderRadius: '16px',
-        marginBottom: '15px',
-        boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
-        border: '1px solid rgba(255,77,166,0.2)',
-        fontFamily: 'inherit',
-        cursor: 'pointer'
+        borderRadius: '18px',
+        marginBottom: '12px',
+        boxShadow: '0 4px 15px rgba(0,0,0,0.06)',
+        border: '1px solid rgba(33,150,243,0.15)',
+        flexWrap: 'wrap',
       }}>
-        <div 
-          style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, padding: '10px', borderRadius: '12px', background: activeLocation === 'store' ? 'rgba(255,77,166,0.05)' : 'transparent', transition: 'all 0.3s' }}
-          onClick={handleStoreClick}
+        {/* Store */}
+        <button
+          onClick={handleFlyStore}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            background: 'rgba(255,77,166,0.06)', border: '1px solid rgba(255,77,166,0.2)',
+            borderRadius: '12px', padding: '8px 14px', cursor: 'pointer', flex: 1, minWidth: '140px',
+          }}
         >
-          <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,77,166,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>🏪</div>
-          <div>
-            <div style={{ fontSize: '12px', color: '#888', fontWeight: 'bold', textTransform: 'uppercase' }}>Starting Point</div>
-            <div style={{ fontSize: '15px', color: '#FF4DA6', fontWeight: 600 }}>Bloom & Bliss Store</div>
+          <span style={{ fontSize: '20px' }}>🏪</span>
+          <div style={{ textAlign: 'left' }}>
+            <div style={{ fontSize: '10px', color: '#888', fontWeight: 700, textTransform: 'uppercase' }}>From</div>
+            <div style={{ fontSize: '13px', color: '#FF4DA6', fontWeight: 700 }}>Bloom & Bliss</div>
           </div>
-        </div>
+        </button>
 
-        <div style={{ color: '#FF4DA6', padding: '0 15px', fontSize: '24px' }}>
-          →
-        </div>
+        <span style={{ color: '#ccc', fontSize: '20px' }}>→</span>
 
-        <div 
-          style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, justifyContent: 'flex-end', textAlign: 'right', padding: '10px', borderRadius: '12px', background: activeLocation === 'dest' ? 'rgba(76,175,80,0.05)' : 'transparent', transition: 'all 0.3s' }}
-          onClick={handleDestClick}
+        {/* Destination */}
+        <button
+          onClick={handleFlyDest}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            background: 'rgba(76,175,80,0.06)', border: '1px solid rgba(76,175,80,0.2)',
+            borderRadius: '12px', padding: '8px 14px', cursor: 'pointer', flex: 1, minWidth: '140px',
+          }}
         >
-          <div>
-            <div style={{ fontSize: '12px', color: '#888', fontWeight: 'bold', textTransform: 'uppercase' }}>Destination</div>
-            <div style={{ fontSize: '15px', color: '#4CAF50', fontWeight: 600, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }} title={customerAddress || 'Customer Location'}>
-              {customerAddress || 'Customer Location'}
+          <span style={{ fontSize: '20px' }}>🏠</span>
+          <div style={{ textAlign: 'left' }}>
+            <div style={{ fontSize: '10px', color: '#888', fontWeight: 700, textTransform: 'uppercase' }}>To</div>
+            <div style={{
+              fontSize: '13px', color: '#4CAF50', fontWeight: 700,
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '160px',
+            }}>
+              {customerAddress || 'Customer'}
             </div>
           </div>
-          <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(76,175,80,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>📍</div>
+        </button>
+
+        {/* Fit All Button */}
+        <button
+          onClick={handleFitAll}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            background: fitAll ? 'linear-gradient(135deg,#9C27B0,#6A1B9A)' : '#f5f5f5',
+            color: fitAll ? 'white' : '#666',
+            border: 'none', borderRadius: '12px', padding: '10px 16px',
+            cursor: 'pointer', fontSize: '13px', fontWeight: 700,
+            boxShadow: fitAll ? '0 4px 12px rgba(156,39,176,0.35)' : 'none',
+            transition: 'all 0.3s',
+          }}
+        >
+          🗺️ Overview
+        </button>
+
+        {/* Follow Driver Button */}
+        <button
+          onClick={handleFollowDriver}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            background: autoFollow ? 'linear-gradient(135deg,#2196F3,#1565C0)' : '#f5f5f5',
+            color: autoFollow ? 'white' : '#666',
+            border: 'none', borderRadius: '12px', padding: '10px 16px',
+            cursor: 'pointer', fontSize: '13px', fontWeight: 700,
+            boxShadow: autoFollow ? '0 4px 12px rgba(33,150,243,0.35)' : 'none',
+            transition: 'all 0.3s',
+          }}
+        >
+          {autoFollow ? '📡 Following' : '🎯 Follow Driver'}
+        </button>
+
+        {/* GPS Status */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '6px',
+          background: gpsStatus === 'active' ? 'rgba(76,175,80,0.1)' : gpsStatus === 'error' ? 'rgba(244,67,54,0.1)' : 'rgba(255,152,0,0.1)',
+          color: gpsStatus === 'active' ? '#4CAF50' : gpsStatus === 'error' ? '#F44336' : '#FF9800',
+          padding: '8px 14px', borderRadius: '50px', fontSize: '12px', fontWeight: 700,
+        }}>
+          <span style={{
+            width: '8px', height: '8px', borderRadius: '50%',
+            background: 'currentColor',
+            display: 'inline-block',
+            animation: gpsStatus === 'active' ? 'gpsBlinkDot 1.2s ease-in-out infinite' : 'none',
+          }}></span>
+          {gpsStatus === 'active' ? `GPS ±${accuracy}m` : gpsStatus === 'error' ? 'GPS Off' : 'GPS…'}
         </div>
       </div>
 
-      <div className="delivery-map-container" style={{ height: '400px', width: '100%', borderRadius: '24px', overflow: 'hidden', border: '1px solid rgba(255,77,166,0.2)', boxShadow: '0 10px 30px rgba(0,0,0,0.3)' }}>
+      {/* ── Map ── */}
+      <div style={{
+        height: '420px', width: '100%', borderRadius: '22px',
+        overflow: 'hidden', boxShadow: '0 8px 30px rgba(0,0,0,0.15)',
+        border: '1px solid rgba(33,150,243,0.2)',
+      }}>
         <MapContainer
-        center={initialCenter}
-        zoom={16}
-        scrollWheelZoom={true}
-        style={{ height: '100%', width: '100%' }}
-        zoomControl={true}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-
-        {/* Store Marker */}
-        <Marker 
-          position={[storeCoords.lat, storeCoords.lng]} 
-          icon={storeIcon}
-          ref={storeMarkerRef}
-          eventHandlers={{
-             click: handleStoreClick,
-          }}
+          center={initialCenter}
+          zoom={15}
+          scrollWheelZoom
+          style={{ height: '100%', width: '100%' }}
         >
-          <Popup>
-            <strong style={{ color: '#FF4DA6' }}>🏪 Bloom & Bliss Store</strong><br />
-            Singanallur, Coimbatore<br />
-            <em>Starting point for your order.</em>
-          </Popup>
-        </Marker>
-
-        {/* Destination Marker */}
-        <Marker 
-          position={[destCoords.lat, destCoords.lng]} 
-          icon={destIcon}
-          ref={destMarkerRef}
-          eventHandlers={{
-             click: handleDestClick,
-          }}
-        >
-          <Popup>
-            <strong style={{ color: '#4CAF50' }}>📍 Destination</strong><br />
-            {customerAddress || 'Customer Location'}<br />
-            <em>Your items will arrive here.</em>
-          </Popup>
-        </Marker>
-
-        {/* Path Traveled Polyline - Actively drawn from history */}
-        {pathHistory.length > 1 && (
-          <Polyline 
-            positions={pathHistory.map(p => [p.lat, p.lng])} 
-            color="#2196F3" 
-            weight={5} 
-            opacity={0.8}
+          {/* Dark map tiles for premium look */}
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-        )}
 
-        {/* Illustrative Route to Destination - Shown when destination is active */}
-        {activeLocation === 'dest' && (
-          <Polyline 
-            positions={[
-              trackingCoords ? [trackingCoords.lat, trackingCoords.lng] : [storeCoords.lat, storeCoords.lng],
-              [destCoords.lat, destCoords.lng]
-            ]} 
-            color="#FF4DA6" 
-            weight={4} 
-            dashArray="10, 10" // dashed look
-            opacity={0.6}
-          />
-        )}
-
-        {/* Dynamic Delivery Driver Marker (based on Live Hardware GPS or props) */}
-        {trackingCoords && (
-          <Marker position={[trackingCoords.lat, trackingCoords.lng]} icon={deliveryIcon}>
+          {/* Store Marker */}
+          <Marker position={[storeCoords.lat, storeCoords.lng]} icon={storeIcon}>
             <Popup>
-              <b>{liveUserCoords ? "Live Tracking (Device GPS)" : "Delivery in Progress"}</b><br />
-              {liveUserCoords ? "This is your hardware GPS location." : "Your order is on the way!"}
+              <strong style={{ color: '#FF4DA6' }}>🏪 Bloom & Bliss Store</strong><br />
+              Singanallur, Coimbatore<br />
+              <em>Order dispatch point</em>
             </Popup>
           </Marker>
-        )}
 
-        <MapController activeCoords={getActiveCoords()} trackingCoords={trackingCoords} />
-      </MapContainer>
+          {/* Destination Marker */}
+          <Marker position={[destCoords.lat, destCoords.lng]} icon={destIcon}>
+            <Popup>
+              <strong style={{ color: '#4CAF50' }}>🏠 Delivery Destination</strong><br />
+              {customerAddress || 'Customer Location'}<br />
+              <em>Your order arrives here</em>
+            </Popup>
+          </Marker>
+
+          {/* GPS Accuracy Circle */}
+          {liveCoords && accuracy && (
+            <Circle
+              center={[liveCoords.lat, liveCoords.lng]}
+              radius={accuracy}
+              pathOptions={{
+                color: '#2196F3',
+                fillColor: '#2196F3',
+                fillOpacity: 0.08,
+                weight: 1.5,
+                dashArray: '5, 5',
+              }}
+            />
+          )}
+
+          {/* Animated Delivery Truck Marker */}
+          {activeCoords && <AnimatedDeliveryMarker coords={activeCoords} />}
+
+          {/* ── Planned Route: Store → Destination (always visible) */}
+          <Polyline
+            positions={[
+              [storeCoords.lat, storeCoords.lng],
+              [destCoords.lat, destCoords.lng],
+            ]}
+            pathOptions={{
+              color: '#9E9E9E',
+              weight: 4,
+              opacity: 0.45,
+              dashArray: '6, 10',
+            }}
+          />
+
+          {/* ── Traveled trail: history of driver's actual path */}
+          {pathHistory.length > 1 && (
+            <Polyline
+              positions={pathHistory.map((p) => [p.lat, p.lng])}
+              pathOptions={{ color: '#2196F3', weight: 5, opacity: 0.9, lineCap: 'round', lineJoin: 'round' }}
+            />
+          )}
+
+          {/* ── Remaining route: driver → destination (dashed pink) */}
+          {activeCoords && (
+            <Polyline
+              positions={[
+                [activeCoords.lat, activeCoords.lng],
+                [destCoords.lat, destCoords.lng],
+              ]}
+              pathOptions={{ color: '#FF4DA6', weight: 3.5, opacity: 0.7, dashArray: '10, 8' }}
+            />
+          )}
+
+          {/* Fit-all bounds — shows both store + destination */}
+          <BoundsController storeCoords={storeCoords} destCoords={destCoords} active={fitAll} />
+
+          {/* Auto-follow driver */}
+          <LiveMapController coords={autoFollow ? activeCoords : null} autoFollow={autoFollow} />
+
+          {/* Fly to individual marker on button click */}
+          {flyTarget && <FlyToController target={flyTarget} />}
+        </MapContainer>
       </div>
+
+      {/* Inline keyframes */}
+      <style>{`
+        @keyframes gpsBlinkDot {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.3; }
+        }
+      `}</style>
     </div>
   );
 };
 
 export default DeliveryMap;
-

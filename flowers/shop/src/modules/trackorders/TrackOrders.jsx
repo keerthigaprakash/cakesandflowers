@@ -224,10 +224,15 @@ const TrackOrders = () => {
               {/* Delivery Map (Live Tracking) */}
               {order.status === 'shipped' && (
                 <div className="track-map-section">
-                  <div className="section-label">📍 LIVE DELIVERY TRACKING</div>
+                  <div className="section-label" style={{ padding: '0 0 12px', fontSize: '0.85rem', fontWeight: 800, color: '#888', letterSpacing: '1px' }}>
+                    📡 LIVE DELIVERY TRACKING
+                  </div>
                   <DeliveryMap 
                     deliveryCoords={deliveryCoords[order.id]} 
-                    customerAddress={order.shipping_info?.address}
+                    customerAddress={[
+                      order.shipping_info?.address,
+                      order.shipping_info?.city,
+                    ].filter(Boolean).join(', ')}
                   />
                 </div>
               )}
