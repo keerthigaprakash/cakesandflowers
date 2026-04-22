@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ProductCard from '../../components/Productcard';
+import { API_BASE_URL } from '../../config';
 import './Products.css';
 import ch1 from '../../assets/ch1.jpg';
 import ch2 from '../../assets/ch2.jpg';
@@ -24,30 +25,34 @@ const Products = ({ onAddToCart, refreshTrigger, isAdmin, onDeleteSuccess }) => 
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Update selectedCategory when URL query params change
   useEffect(() => {
-    const category = searchParams.get('category') || '';
-    setSelectedCategory(category);
-  }, [searchParams]);
+    const controller = new AbortController();
 
-  useEffect(() => {
     const fetchProducts = async () => {
+      const category = searchParams.get('category') || '';
+      setSelectedCategory(category);
       setLoading(true);
+
       try {
-        const url = selectedCategory && selectedCategory !== 'all'
-          ? `http://127.0.0.1:5000/api/home/products?category=${selectedCategory}`
-          : 'http://127.0.0.1:5000/api/home/products';
-        const response = await fetch(url);
+        const url = category && category !== 'all'
+          ? `${API_BASE_URL}/home/products?category=${category}`
+          : `${API_BASE_URL}/home/products`;
+        
+        const response = await fetch(url, { signal: controller.signal });
         const data = await response.json();
         setProducts(data.data || []);
       } catch (err) {
-        console.error('Failed to fetch products:', err);
+        if (err.name !== 'AbortError') {
+          console.error('Failed to fetch products:', err);
+        }
       } finally {
         setLoading(false);
       }
     };
+
     fetchProducts();
-  }, [selectedCategory, refreshTrigger]);
+    return () => controller.abort();
+  }, [searchParams, refreshTrigger]);
 
 
   const handleCategoryChange = (category) => {

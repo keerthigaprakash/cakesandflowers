@@ -19,6 +19,7 @@ import Login from './login/Login.jsx';
 import Signup from './login/Signup.jsx';
 import Orders from './modules/orders/Orders.jsx';
 import DeliveryOrders from './modules/orders/DeliveryOrders.jsx';
+import TrackOrders from './modules/trackorders/TrackOrders.jsx';
 
 function App() {
   const [cartItems, setCartItems] = useState([]);
@@ -81,7 +82,7 @@ function App() {
       <div className="main-container">
         {isLoggedIn && <Navbar cartCount={cartItems.length} user={user} onAddItem={user?.role === 'admin' ? () => setIsModalOpen(true) : null} />}
 
-        <div className="content" style={{ paddingTop: isLoggedIn ? '80px' : '0' }}>
+        <div className={`content ${isLoggedIn ? 'with-navbar' : ''}`}>
           <Routes>
             <Route path="/" element={isLoggedIn ? <Home onAddToCart={handleAddToCart} refreshTrigger={refreshTrigger} isAdmin={user?.role === 'admin'} onDeleteSuccess={handleProductAdded} /> : <Navigate to="/login" replace />} />
             <Route path="/products" element={isLoggedIn ? <Products onAddToCart={handleAddToCart} refreshTrigger={refreshTrigger} isAdmin={user?.role === 'admin'} onDeleteSuccess={handleProductAdded} /> : <Navigate to="/login" replace />} />
@@ -133,10 +134,10 @@ function App() {
             }
             />
             <Route path="/orders" element={
-              isLoggedIn && user?.role === 'admin' ? (
-                <Orders />
+              isLoggedIn ? (
+                user?.role === 'admin' ? <Orders /> : <TrackOrders />
               ) : (
-                <Navigate to="/" replace />
+                <Navigate to="/login" replace />
               )
             } />
             <Route path="/delivery-orders" element={

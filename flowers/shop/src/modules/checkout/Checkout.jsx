@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getProductImage } from '../../utils/imageMapper';
+import { formatPrice } from '../../utils/currencyFormatter';
+import { API_BASE_URL } from '../../config';
 import './Checkout.css';
 
 const Checkout = ({ cartItems = [], user, onOrderSuccess }) => {
@@ -8,8 +10,8 @@ const Checkout = ({ cartItems = [], user, onOrderSuccess }) => {
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
+    fullName: user?.name || '',
+    email: user?.email || '',
     phone: '',
     address: '',
     city: '',
@@ -58,10 +60,12 @@ const Checkout = ({ cartItems = [], user, onOrderSuccess }) => {
         }
       };
 
-      const response = await fetch('http://127.0.0.1:5000/api/orders', {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(orderPayload),
       });
@@ -77,7 +81,11 @@ const Checkout = ({ cartItems = [], user, onOrderSuccess }) => {
       }
     } catch (error) {
       console.error('Checkout error:', error);
-      alert('Error connecting to server. Please try again.');
+      if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+        alert('Server not reachable. Please check your connection.');
+      } else {
+        alert('Error connecting to server. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -153,6 +161,14 @@ const Checkout = ({ cartItems = [], user, onOrderSuccess }) => {
                 <button type="button" className={`payment-option ${paymentMethod === 'cod' ? 'selected' : ''}`} onClick={() => setPaymentMethod('cod')}>💵 Cash on Delivery</button>
                 <button type="button" className={`payment-option ${paymentMethod === 'online' ? 'selected' : ''}`} onClick={() => setPaymentMethod('online')}>💳 Online Payment</button>
               </div>
+              
+              {paymentMethod === 'online' && (
+                <div style={{ marginTop: '20px', textAlign: 'center', padding: '20px', border: '2px dashed var(--primary-pink)', borderRadius: '10px', background: 'rgba(255, 192, 203, 0.1)' }}>
+                  <p style={{ marginBottom: '15px', fontWeight: 'bold', color: 'var(--dark-purple)' }}>Scan QR to Pay {formatPrice(total)}</p>
+                  <img src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=upi://pay?pa=bloombliss@upi&pn=BloomAndBliss&am=${total}`} alt="Payment QR Code" style={{ borderRadius: '10px' }} />
+                  <p style={{ marginTop: '15px', fontSize: '13px', color: '#666' }}>Use any UPI app (GPay, PhonePe, Paytm, etc.)</p>
+                </div>
+              )}
             </div>
 
             <button type="button" className="place-order-btn" onClick={handlePlaceOrder} disabled={loading}>
@@ -169,16 +185,16 @@ const Checkout = ({ cartItems = [], user, onOrderSuccess }) => {
                 <div key={item.id} className="summary-item" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', padding: '10px', borderRadius: '8px', background: 'var(--light-lavender)' }}>
                   <img src={getProductImage(item.image)} alt={item.name} style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '5px' }} />
                   <span style={{ flex: 1 }}>{item.name} × {item.quantity}</span>
-                  <span>${(Number(item.price) * item.quantity).toFixed(2)}</span>
+                  <span>{formatPrice(Number(item.price) * item.quantity)}</span>
                 </div>
               ))}
             </div>
 
-            <div className="summary-item"><span>Subtotal</span><span>${subtotal}</span></div>
-            <div className="summary-item"><span>Tax (5%)</span><span>${tax}</span></div>
-            <div className="summary-item"><span>Shipping</span><span>{shipping === 0 ? 'Free' : `₹${shipping}`}</span></div>
+            <div className="summary-item"><span>Subtotal</span><span>{formatPrice(subtotalValue)}</span></div>
+            <div className="summary-item"><span>Tax (5%)</span><span>{formatPrice(subtotalValue * 0.05)}</span></div>
+            <div className="summary-item"><span>Shipping</span><span>{shipping === 0 ? 'Free' : formatPrice(shipping)}</span></div>
 
-            <div className="summary-total"><span>Total:</span><span>${total}</span></div>
+            <div className="summary-total"><span>Total:</span><span>{formatPrice(total)}</span></div>
 
             <div style={{
               marginTop: '20px',

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_BASE_URL } from '../config';
 import './AddProductModal.css';
 
 const AddProductModal = ({ isOpen, onClose, onProductAdded }) => {
@@ -37,7 +38,7 @@ const AddProductModal = ({ isOpen, onClose, onProductAdded }) => {
         submitData.append('image', selectedFile);
       }
 
-      const response = await fetch('http://127.0.0.1:5000/api/home/products', {
+      const response = await fetch(`${API_BASE_URL}/home/products`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -57,7 +58,11 @@ const AddProductModal = ({ isOpen, onClose, onProductAdded }) => {
         setError(data.message || 'Failed to add product');
       }
     } catch (err) {
-      setError('Connection error. Please try again.');
+      if (err.name === 'TypeError' && err.message === 'Failed to fetch') {
+        setError('Server not reachable. Please check your connection.');
+      } else {
+        setError('Connection error. Please try again.');
+      }
     } finally {
       setLoading(false);
     }

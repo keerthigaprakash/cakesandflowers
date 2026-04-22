@@ -1,4 +1,5 @@
 // util/imageMapper.js
+import { SOCKET_URL } from '../config';
 import flower1 from '../assets/flower1.jpg';
 import pl1 from '../assets/pl1.jpg';
 import pl2 from '../assets/pl2.jpg';
@@ -76,12 +77,22 @@ const imageMap = {
 export const getProductImage = (imageKey) => {
   if (!imageKey) return 'https://via.placeholder.com/300x200?text=Product';
 
-  // If it's a full URL, return it as is
-  if (imageKey.startsWith('http') || imageKey.startsWith('https') || imageKey.startsWith('data:')) {
+  // If it's a full URL (external), return it as is
+  if (imageKey.startsWith('http')) {
     return imageKey;
   }
 
-  // Strip extension if user entered 'cake1.jpg' instead of 'cake1'
+  // If it's an uploaded file (starts with /uploads), prepend the backend URL
+  if (imageKey.startsWith('/uploads')) {
+    return `${SOCKET_URL}${imageKey}`;
+  }
+
+  // Handle data URIs or base64
+  if (imageKey.startsWith('data:')) {
+    return imageKey;
+  }
+
+  // Strip extension for local asset mapping (e.g. 'cake1.jpg' -> 'cake1')
   const key = imageKey.split('.')[0];
 
   return imageMap[key] || 'https://via.placeholder.com/300x200?text=Product';

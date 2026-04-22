@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ProductCard from '../../components/Productcard';
+import { API_BASE_URL } from '../../config';
 import './Plants.css';
 
 const Plants = ({ onAddToCart, refreshTrigger, isAdmin, onDeleteSuccess }) => {
@@ -10,7 +11,7 @@ const Plants = ({ onAddToCart, refreshTrigger, isAdmin, onDeleteSuccess }) => {
     const fetchPlants = async () => {
       setLoading(true);
       try {
-        const response = await fetch('http://127.0.0.1:5000/api/home/products?category=plants');
+        const response = await fetch(`${API_BASE_URL}/home/products?category=plants`);
         const data = await response.json();
         setPlantProducts(data.data || []);
       } catch (err) {

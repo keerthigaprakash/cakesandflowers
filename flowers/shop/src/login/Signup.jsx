@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { API_BASE_URL } from '../config';
 import './Login.css';
 
 const Signup = ({ onSignup }) => {
@@ -22,7 +23,7 @@ const Signup = ({ onSignup }) => {
 
     setLoading(true);
     try {
-      const response = await fetch('http://127.0.0.1:5000/api/home/auth/register', {
+      const response = await fetch(`${API_BASE_URL}/home/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -39,7 +40,11 @@ const Signup = ({ onSignup }) => {
         setError(data.message || 'Registration failed');
       }
     } catch (err) {
-      setError('Connection error. Please try again.');
+      if (err.name === 'TypeError' && err.message === 'Failed to fetch') {
+        setError('Server not reachable. Please check your connection.');
+      } else {
+        setError('Connection error. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -57,7 +62,7 @@ const Signup = ({ onSignup }) => {
 
         <form className="login-form" onSubmit={handleSignup}>
           <div className="login-form-group">
-            <label htmlFor="name">Full Name</label>
+            <label htmlFor="name">Full Name</label><br /><br />
             <input
               type="text"
               id="name"
@@ -69,7 +74,7 @@ const Signup = ({ onSignup }) => {
           </div>
 
           <div className="login-form-group">
-            <label htmlFor="email">Email Address</label>
+            <label htmlFor="email">Email Address</label><br /><br />
             <input
               type="email"
               id="email"
@@ -81,7 +86,7 @@ const Signup = ({ onSignup }) => {
           </div>
 
           <div className="login-form-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">Password</label><br /><br />
             <input
               type="password"
               id="password"
@@ -93,7 +98,7 @@ const Signup = ({ onSignup }) => {
           </div>
 
           <div className="login-form-group">
-            <label htmlFor="confirmPassword">Confirm Password</label>
+            <label htmlFor="confirmPassword">Confirm Password</label><br /><br />
             <input
               type="password"
               id="confirmPassword"

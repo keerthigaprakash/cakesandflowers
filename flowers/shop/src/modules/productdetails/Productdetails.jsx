@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getProductImage } from '../../utils/imageMapper';
+import { formatPrice } from '../../utils/currencyFormatter';
+import { API_BASE_URL } from '../../config';
 import '../productdetails/productdetails.css';
 
 const ProductDetails = ({ onAddToCart }) => {
@@ -11,18 +13,26 @@ const ProductDetails = ({ onAddToCart }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const controller = new AbortController();
+    
     const fetchProduct = async () => {
       try {
-        const response = await fetch(`http://127.0.0.1:5000/api/home/products/${id}`);
+        const response = await fetch(`${API_BASE_URL}/home/products/${id}`, {
+          signal: controller.signal
+        });
         const data = await response.json();
         setProduct(data.data);
       } catch (err) {
-        console.error('Failed to fetch product details:', err);
+        if (err.name !== 'AbortError') {
+          console.error('Failed to fetch product details:', err);
+        }
       } finally {
         setLoading(false);
       }
     };
+
     fetchProduct();
+    return () => controller.abort();
   }, [id]);
 
   if (loading) return <div style={{ textAlign: 'center', padding: '100px', color: 'white' }}>Loading product details... 🎂</div>;
@@ -61,7 +71,7 @@ const ProductDetails = ({ onAddToCart }) => {
             </div>
 
             <div className="product-price-section">
-              <span className="product-price-large">${Number(product.price).toFixed(2)}</span>
+              <span className="product-price-large">{formatPrice(product.price)}</span>
               <span className="product-category-badge">
                 {product.category === 'cakes' && '🎂 Cakes'}
                 {product.category === 'flowers' && '🌹 Flowers'}
@@ -96,7 +106,7 @@ const ProductDetails = ({ onAddToCart }) => {
                 <button onClick={() => handleQuantityChange(quantity + 1)}>+</button>
               </div>
               <span style={{ marginLeft: 'auto', fontWeight: '600', color: 'var(--dark-purple)' }}>
-                Total: ${(Number(product.price) * quantity).toFixed(2)}
+                Total: {formatPrice(Number(product.price) * quantity)}
               </span>
             </div>
 

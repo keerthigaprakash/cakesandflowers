@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ProductCard from '../../components/Productcard';
+import { API_BASE_URL } from '../../config';
 import './Gifts.css';
 
 const Gifts = ({ onAddToCart, refreshTrigger, isAdmin, onDeleteSuccess }) => {
@@ -10,7 +11,7 @@ const Gifts = ({ onAddToCart, refreshTrigger, isAdmin, onDeleteSuccess }) => {
     const fetchGifts = async () => {
       setLoading(true);
       try {
-        const response = await fetch('http://127.0.0.1:5000/api/home/products?category=gifts');
+        const response = await fetch(`${API_BASE_URL}/home/products?category=gifts`);
         const data = await response.json();
         setGiftProducts(data.data || []);
       } catch (err) {

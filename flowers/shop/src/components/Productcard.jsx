@@ -1,6 +1,8 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getProductImage } from '../utils/imageMapper';
+import { formatPrice } from '../utils/currencyFormatter';
+import { API_BASE_URL } from '../config';
 import './Productcard.css';
 
 const ProductCard = ({ product, onAddToCart, isAdmin, onDeleteSuccess }) => {
@@ -23,7 +25,7 @@ const ProductCard = ({ product, onAddToCart, isAdmin, onDeleteSuccess }) => {
 
     try {
       const token = localStorage.getItem('token') || '';
-      const response = await fetch(`http://127.0.0.1:5000/api/home/products/${product.id}`, {
+      const response = await fetch(`${API_BASE_URL}/home/products/${product.id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -38,7 +40,11 @@ const ProductCard = ({ product, onAddToCart, isAdmin, onDeleteSuccess }) => {
       }
     } catch (err) {
       console.error(err);
-      alert('Error deleting product.');
+      if (err.name === 'TypeError' && err.message === 'Failed to fetch') {
+        alert('Server not reachable. Please check your connection.');
+      } else {
+        alert('Error deleting product.');
+      }
     }
   };
 
@@ -56,7 +62,7 @@ const ProductCard = ({ product, onAddToCart, isAdmin, onDeleteSuccess }) => {
       )}
       <div className="product-info">
         <h3 className="product-name">{product.name}</h3>
-        <p className="product-price">${Number(product.price).toFixed(2)}</p>
+        <p className="product-price">{formatPrice(product.price)}</p>
         {product.description && (
           <p className="product-description">{product.description}</p>
         )}

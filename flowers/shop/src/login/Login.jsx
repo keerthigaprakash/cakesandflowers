@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { API_BASE_URL } from '../config';
 import './Login.css';
 
 const Login = ({ onLogin }) => {
@@ -15,7 +16,7 @@ const Login = ({ onLogin }) => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://127.0.0.1:5000/api/home/auth/login', {
+      const response = await fetch(`${API_BASE_URL}/home/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -33,7 +34,11 @@ const Login = ({ onLogin }) => {
         setError(data.message || 'Invalid email or password');
       }
     } catch (err) {
-      setError('Connection error. Please try again.');
+      if (err.name === 'TypeError' && err.message === 'Failed to fetch') {
+        setError('Server not reachable. Please check your connection.');
+      } else {
+        setError('Connection error. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -56,7 +61,7 @@ const Login = ({ onLogin }) => {
 
         <form className="login-form" onSubmit={handleLogin}>
           <div className="login-form-group">
-            <label htmlFor="email">Email Address</label>
+            <label htmlFor="email">Email Address</label> <br /><br />
             <input
               type="email"
               id="email"
@@ -68,7 +73,7 @@ const Login = ({ onLogin }) => {
           </div>
 
           <div className="login-form-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">Password</label><br /><br />
             <input
               type="password"
               id="password"

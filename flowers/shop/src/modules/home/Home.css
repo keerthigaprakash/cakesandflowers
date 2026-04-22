@@ -55,6 +55,14 @@ body {
   margin-bottom: 30px;
 }
 
+.make-every h2 {
+  font-size: 44px;
+  font-weight: 600;
+  font-family: 'Playfair Display', serif;
+  margin-bottom: 10px;
+  color: #ff4da699;
+}
+
 .colloction-name {
   max-width: 100%;
   display: flex;
@@ -65,8 +73,9 @@ body {
 }
 
 .colloction-name h3 {
-  width: 150px;
-  /* Match collection img width */
+  flex: 1;
+  min-width: 100px;
+  max-width: 150px;
   font-size: 14px;
   text-align: center;
 }
@@ -82,13 +91,12 @@ body {
 
 /* COMMON BUTTON STYLE */
 .hero-btn {
-  padding: 6px 14px !important;
-  font-size: 13px !important;
-  width: 20% !important;
-  min-width: unset !important;
+  padding: 10px 20px !important;
+  font-size: 14px !important;
   border-radius: 10px !important;
   border: none !important;
   cursor: pointer !important;
+  transition: var(--transition);
 }
 
 /* PRIMARY */
@@ -213,11 +221,13 @@ body {
 
 /* SLIDER */
 .hero-slider {
-  width: 80%;
+  width: 90%;
+  max-width: 1000px;
   height: 450px;
-  margin: auto;
+  margin: 40px auto;
   overflow: hidden;
   border-radius: 20px;
+  box-shadow: var(--shadow);
 }
 
 .hero-slider-track {
@@ -227,9 +237,9 @@ body {
 }
 
 .hero-slider-track img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  width: 100% !important;
+  height: 100% !important;
+  /* object-fit: cover; */
   flex-shrink: 0;
   /* 🔥 VERY IMPORTANT */
 }
@@ -247,6 +257,8 @@ body {
   height: 200px;
   border-radius: 10px;
   transition: 0.3s;
+  flex-shrink: 1;
+  min-width: 80px;
 }
 
 .colloction img:hover {
@@ -257,8 +269,8 @@ body {
 /* LOVE SECTION */
 .shop-love {
   background: linear-gradient(135deg, #1a1a2e, #2a2a40);
-  padding: 40px;
-  margin: 60px;
+  padding: 60px 20px;
+  margin: 40px 5%;
   border-radius: var(--border-radius);
 }
 
@@ -266,83 +278,123 @@ body {
 .love-img {
   display: flex;
   justify-content: center;
-  gap: 40px;
-
+  flex-wrap: wrap;
+  gap: 30px;
 }
 
 /* IMAGES */
-.love-img img {
-  width: 320px !important;
-  height: 350px !important;
-  object-fit: cover !important;
-  border-radius: 15px;
-  transition: var(--transition);
-  transform: ensure 3D;
+.love-img .love-card {
+  flex: 1;
+  min-width: 250px;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
+.love-img img {
+  width: 100%;
+  height: 350px;
+  object-fit: cover;
+  border-radius: 15px;
+  transition: var(--transition);
+}
 
 .love-img img:hover {
-  transform: scale(1.1);
+  transform: scale(1.05);
   box-shadow: var(--shadow-hover);
 }
 
-/* TEXT BELOW IMAGES */
-.love-head {
-  display: flex;
-  justify-content: center;
-  gap: 40px;
-  /* Match love-img gap */
-  margin-top: 20px;
+.love-card-text {
+  margin-top: 15px;
   color: var(--dark-purple);
   font-weight: 600;
-}
-
-.love-head h3 {
-  width: 320px;
-  /* Match love-img width */
+  font-size: 18px;
   text-align: center;
 }
 
+/* Removed redundant love-head */
+
 /* ===== RESPONSIVE ===== */
+@media (max-width: 1024px) {
+  .hero-slider {
+    height: 350px;
+  }
+}
+
 @media (max-width: 768px) {
+  .hero-section {
+    padding: 60px 20px;
+  }
+
   .hero-title {
-    font-size: 34px;
+    font-size: 36px;
+  }
+
+  .hero-subtitle {
+    font-size: 16px;
+  }
+
+  .hero-slider {
+    height: 250px;
+    width: 95%;
+  }
+
+  .categories-grid {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+  }
+
+  .products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+  }
+
+  .colloction {
+    flex-wrap: wrap;
+    gap: 10px;
   }
 
   .colloction img {
-    width: 30%;
+    width: 28%;
+    height: auto;
+    aspect-ratio: 3/4;
   }
 
-  .love-img img {
-    width: 45%;
+  .colloction-name h3 {
+    width: 28%;
+    font-size: 12px;
   }
 }
 
 @media (max-width: 480px) {
   .hero-title {
-    font-size: 26px;
+    font-size: 28px;
   }
 
-  .colloction img {
-    width: 45%;
+  .hero-buttons {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .hero-btn {
+    width: 80% !important;
+  }
+
+  .hero-slider {
+    height: 200px;
+  }
+
+  .section-title {
+    font-size: 28px;
+  }
+
+  .shop-love {
+    margin: 30px 10px;
+    padding: 30px 15px;
   }
 
   .love-img img {
-    width: 80%;
-  }
-}
-
-/* RESPONSIVE */
-@media (max-width: 768px) {
-  .hero-title {
-    font-size: 32px;
-  }
-
-  .categories-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .products-grid {
-    grid-template-columns: 1fr;
+    height: 280px;
   }
 }

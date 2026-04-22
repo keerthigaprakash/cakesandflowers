@@ -15,9 +15,6 @@ const createOrder = async ({ user_id, total, items, shipping_info }) => {
     await client.query('BEGIN');
 
     // Create the order entry
-    // Note: We might want to store shipping_info as a JSONB column in 'orders' 
-    // or in a separate 'shipping_details' table. 
-    // For now, we'll stick to the existing schema.
     const orderRes = await client.query(
       'INSERT INTO orders (user_id, total, shipping_info, status) VALUES ($1, $2, $3, $4) RETURNING *',
       [user_id || null, total, shipping_info || null, 'pending']
@@ -25,9 +22,6 @@ const createOrder = async ({ user_id, total, items, shipping_info }) => {
     const order = orderRes.rows[0];
 
     // Create the order items
-    // If product_id is not in our 'products' table (e.g. static frontend products), 
-    // we might have a problem because of the FOREIGN KEY constraint. 
-    // We should probably ensure products exist or allow product_id to be null.
     for (const item of items) {
       await client.query(
         'INSERT INTO order_items (order_id, product_id, quantity, price) VALUES ($1, $2, $3, $4)',
@@ -46,10 +40,31 @@ const createOrder = async ({ user_id, total, items, shipping_info }) => {
 };
 
 const getOrdersByUserId = async (userId) => {
-  const { rows } = await pool.query(
-    'SELECT * FROM orders WHERE user_id = $1 ORDER BY id DESC',
-    [userId]
-  );
+  const { rows } = await pool.query(`
+    SELECT 
+      o.id,
+      o.total,
+      o.shipping_info,
+      o.status,
+      o.created_at,
+      o.current_lat,
+      o.current_lng,
+      json_agg(
+        json_build_object(
+          'product_id', i.product_id,
+          'quantity', i.quantity,
+          'price', i.price,
+          'product_name', p.name,
+          'product_image', p.image_key
+        )
+      ) as items
+    FROM orders o
+    LEFT JOIN order_items i ON o.id = i.order_id
+    LEFT JOIN products p ON i.product_id = p.id
+    WHERE o.user_id = $1
+    GROUP BY o.id
+    ORDER BY o.created_at DESC
+  `, [userId]);
   return rows;
 };
 
@@ -64,6 +79,9 @@ const getAllOrders = async () => {
       o.shipping_info,
       o.status,
       o.created_at,
+      o.current_lat,
+      o.current_lng,
+      o.delivery_person_id,
       u.name as customer_name,
       u.email as customer_email,
       json_agg(
@@ -104,7 +122,7 @@ const updateOrderStatus = async (orderId, status) => {
     'UPDATE orders SET status = $1 WHERE id = $2 RETURNING *',
     [status, orderId]
   );
-  return rows[0];
+  return rows[0] || null;
 };
 
 /**
@@ -128,12 +146,17 @@ const getAssignedOrders = async (deliveryPersonId) => {
       o.shipping_info,
       o.status,
       o.created_at,
+      o.current_lat,
+      o.current_lng,
       u.name as customer_name,
       u.email as customer_email,
       json_agg(
         json_build_object(
+          'product_id', i.product_id,
+          'quantity', i.quantity,
+          'price', i.price,
           'product_name', p.name,
-          'quantity', i.quantity
+          'product_image', p.image_key
         )
       ) as items
     FROM orders o
@@ -145,6 +168,52 @@ const getAssignedOrders = async (deliveryPersonId) => {
     ORDER BY o.created_at DESC
   `, [deliveryPersonId]);
   return rows;
+};
+
+/**
+ * Get a single order with its items (for emitting to the user).
+ */
+const getOrderById = async (orderId) => {
+  const { rows } = await pool.query(
+    `SELECT 
+      o.id,
+      o.user_id,
+      o.total,
+      o.shipping_info,
+      o.status,
+      o.created_at,
+      o.current_lat,
+      o.current_lng,
+      u.name as customer_name,
+      u.email as customer_email,
+      json_agg(
+        json_build_object(
+          'product_id', i.product_id,
+          'quantity', i.quantity,
+          'price', i.price,
+          'product_name', p.name,
+          'product_image', p.image_key
+        )
+      ) as items
+    FROM orders o
+    LEFT JOIN users u ON o.user_id = u.id
+    LEFT JOIN order_items i ON o.id = i.order_id
+    LEFT JOIN products p ON i.product_id = p.id
+    WHERE o.id = $1
+    GROUP BY o.id, u.name, u.email`,
+    [orderId]
+  );
+  return rows[0] || null;
+};
+
+/**
+ * Update current delivery location coordinates.
+ */
+const updateOrderLocation = async (orderId, lat, lng) => {
+  await pool.query(
+    'UPDATE orders SET current_lat = $1, current_lng = $2 WHERE id = $3',
+    [lat, lng, orderId]
+  );
 };
 
 /**
@@ -164,5 +233,7 @@ module.exports = {
   updateOrderStatus,
   getDeliveryPersonnel,
   getAssignedOrders,
+  getOrderById,
+  updateOrderLocation,
   deleteOrder,
 };

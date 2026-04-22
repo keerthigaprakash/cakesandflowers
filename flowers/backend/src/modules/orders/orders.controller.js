@@ -82,20 +82,6 @@ const assignOrder = async (req, res) => {
 };
 
 /**
- * PATCH /api/orders/:id/status
- */
-const updateStatus = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
-    const order = await service.updateStatus(id, status);
-    res.json({ success: true, data: order });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to update status.' });
-  }
-};
-
-/**
  * GET /api/orders/delivery-personnel
  * Admin only
  */
@@ -135,12 +121,67 @@ const cancelOrder = async (req, res) => {
   }
 };
 
+/**
+ * PATCH /api/orders/:id/status
+ * Admin only – updates order status and emits real-time event.
+ */
+const updateOrderStatus = async (req, res) => {
+  try {
+    const orderId = req.params.id;
+    const { status } = req.body;
+
+    // Update status in DB
+    const updatedOrder = await service.updateOrderStatus(orderId, status);
+
+    // Fetch full order details for the socket event
+    const fullOrder = await service.getOrderById(orderId);
+
+    // Emit real-time update via Socket.IO
+    const io = req.app.get('io');
+    if (io && fullOrder) {
+      // Send to the specific user's room
+      if (fullOrder.user_id) {
+        io.to(`user_${fullOrder.user_id}`).emit('orderStatusUpdate', {
+          order_id: fullOrder.id,
+          status: status,
+          order: fullOrder,
+        });
+      }
+
+      // Also emit to the order-specific room (for anyone tracking this order)
+      io.to(`order_${orderId}`).emit('orderStatusUpdate', {
+        order_id: fullOrder.id,
+        status: status,
+        order: fullOrder,
+      });
+
+      // Notify all admins
+      io.to('admin_room').emit('orderStatusUpdate', {
+        order_id: fullOrder.id,
+        status: status,
+        order: fullOrder,
+      });
+    }
+
+    res.json({
+      success: true,
+      message: `Order #${orderId} status updated to "${status}".`,
+      data: updatedOrder,
+    });
+  } catch (error) {
+    res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.message || 'Failed to update order status.',
+    });
+  }
+};
+
 module.exports = {
   placeOrder,
   getMyOrders,
   getAllOrders,
   assignOrder,
-  updateStatus,
+  updateOrderStatus,
   getDeliveryPersonnel,
   getAssignedOrders,
   cancelOrder,

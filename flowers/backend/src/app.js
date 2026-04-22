@@ -30,6 +30,16 @@ app.use('/uploads', express.static(path.join(__dirname, '../../uploads')));
 
 /* ──── Routes ─────────────────────────────────────────────────────── */
 
+// Root Welcome Message
+app.get('/', (_req, res) => {
+  res.json({
+    success: true,
+    message: 'Welcome to the Bloom & Bliss Backend 🌸',
+    status: 'Operational',
+    healthCheck: '/api/health'
+  });
+});
+
 // Health‑check
 app.get('/api/health', (_req, res) => {
   res.json({ success: true, message: 'Bloom & Bliss API is running 🌸' });

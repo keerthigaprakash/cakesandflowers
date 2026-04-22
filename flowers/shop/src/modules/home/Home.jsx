@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ProductCard from '../../components/Productcard';
+import { API_BASE_URL } from '../../config';
 
 // Images
 import flower1 from '../../assets/flower1.jpg';
@@ -36,7 +37,7 @@ const Home = ({ onAddToCart, refreshTrigger, isAdmin, onDeleteSuccess }) => {
   useEffect(() => {
     const fetchFeatured = async () => {
       try {
-        const response = await fetch('http://127.0.0.1:5000/api/home/featured');
+        const response = await fetch(`${API_BASE_URL}/home/featured`);
         const data = await response.json();
         setFeaturedProducts(data.data || []);
       } catch (err) {
@@ -66,16 +67,21 @@ const Home = ({ onAddToCart, refreshTrigger, isAdmin, onDeleteSuccess }) => {
     }, [images.length]);
 
     return (
-      <div className="hero-slider">
-        <div
-          className="hero-slider-track"
-          style={{ transform: `translateX(-${currentIndex * 100}%)` }}
-        >
-          {images.map((img, index) => (
-            <img key={index} src={img} alt={`Slide ${index}`} />
-          ))}
+      <>
+        <div className='make-every'>
+          <h2>Make <span className='special'>Every Moment</span> Special!!🌸</h2>
         </div>
-      </div>
+        <div className="hero-slider">
+          <div
+            className="hero-slider-track"
+            style={{ transform: `translateX(-${currentIndex * 100}%)` }}
+          >
+            {images.map((img, index) => (
+              <img key={index} src={img} alt={`Slide ${index}`} />
+            ))}
+          </div>
+        </div>
+      </>
     );
   };
 
@@ -118,19 +124,26 @@ const Home = ({ onAddToCart, refreshTrigger, isAdmin, onDeleteSuccess }) => {
       <section className="shop-love">
         <h2>Shop By Occasions & Relations</h2>
         <p>Surprise Your Loved Ones</p>
-      </section><br />
-      <div className="love-img">
-        <img src={birthday} alt="birthday" />
-        <img src={anniversary} alt="anniversary" />
-        <img src={gifthim} alt="gift-for-him" />
-        <img src={gifther} alt="gift-for-her" />
-      </div><br />
-      <div className="love-head">
-        <h3 className='gift1'>Birthday</h3>
-        <h3 className='gift2'>Anniversary</h3>
-        <h3 className='gift3'> Gift For Him</h3>
-        <h3 className='gift4'>Gift For Her</h3>
-      </div>
+
+        <div className="love-img">
+          <div className="love-card">
+            <img src={birthday} alt="birthday" />
+            <span className="love-card-text">Birthday</span>
+          </div>
+          <div className="love-card">
+            <img src={anniversary} alt="anniversary" />
+            <span className="love-card-text">Anniversary</span>
+          </div>
+          <div className="love-card">
+            <img src={gifthim} alt="gift-for-him" />
+            <span className="love-card-text">Gift For Him</span>
+          </div>
+          <div className="love-card">
+            <img src={gifther} alt="gift-for-her" />
+            <span className="love-card-text">Gift For Her</span>
+          </div>
+        </div>
+      </section>
 
       {/* Categories Section */}
       <section className="categories-section">

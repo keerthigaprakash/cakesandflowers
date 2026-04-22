@@ -68,8 +68,22 @@ const assignOrder = async (orderId, deliveryPersonId) => {
 /**
  * Updates the status of an order.
  */
-const updateStatus = async (orderId, status) => {
-  return model.updateOrderStatus(orderId, status);
+const VALID_STATUSES = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'];
+
+const updateOrderStatus = async (orderId, status) => {
+  if (!VALID_STATUSES.includes(status)) {
+    const error = new Error(`Invalid status. Must be one of: ${VALID_STATUSES.join(', ')}`);
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const updated = await model.updateOrderStatus(orderId, status);
+  if (!updated) {
+    const error = new Error('Order not found.');
+    error.statusCode = 404;
+    throw error;
+  }
+  return updated;
 };
 
 /**
@@ -93,13 +107,26 @@ const cancelOrder = async (orderId) => {
   return model.deleteOrder(orderId);
 };
 
+/**
+ * Retrieves a single order by ID with full details.
+ */
+const getOrderById = async (orderId) => {
+  return model.getOrderById(orderId);
+};
+
+const updateOrderLocation = async (orderId, lat, lng) => {
+  return model.updateOrderLocation(orderId, lat, lng);
+};
+
 module.exports = {
   placeOrder,
   getUserOrders,
   getAllOrders,
   assignOrder,
-  updateStatus,
+  updateOrderStatus,
   getDeliveryPersonnel,
   getAssignedOrders,
   cancelOrder,
+  getOrderById,
+  updateOrderLocation,
 };

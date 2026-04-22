@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getProductImage } from '../../utils/imageMapper';
+import { formatPrice } from '../../utils/currencyFormatter';
 import './Cart.css';
 
 const Cart = ({ cartItems = [], onRemoveFromCart, onUpdateQuantity }) => {
@@ -44,7 +45,7 @@ const Cart = ({ cartItems = [], onRemoveFromCart, onUpdateQuantity }) => {
                     <h3>{item.name}</h3>
                     <p>Category: {item.category}</p>
                     <p className="cart-item-price">
-                      ${Number(item.price).toFixed(2)} each
+                      {formatPrice(item.price)} each
                     </p>
                   </div>
 
@@ -84,7 +85,7 @@ const Cart = ({ cartItems = [], onRemoveFromCart, onUpdateQuantity }) => {
                         color: 'var(--primary-pink)',
                       }}
                     >
-                      ${(Number(item.price) * item.quantity).toFixed(2)}
+                      {formatPrice(Number(item.price) * item.quantity)}
                     </p>
                     <button
                       className="remove-btn"
@@ -103,7 +104,7 @@ const Cart = ({ cartItems = [], onRemoveFromCart, onUpdateQuantity }) => {
               <h2 className="summary-title">Order Summary</h2>
               <div className="summary-row">
                 <span>Subtotal:</span>
-                <span>${calculateSubtotal()}</span>
+                <span>{formatPrice(calculateSubtotal())}</span>
               </div>
               <div className="summary-row">
                 <span>Shipping:</span>
@@ -111,16 +112,12 @@ const Cart = ({ cartItems = [], onRemoveFromCart, onUpdateQuantity }) => {
               </div>
               <div className="summary-row">
                 <span>Tax:</span>
-                <span>${(calculateSubtotal() * 0.05).toFixed(2)}</span>
+                <span>{formatPrice(calculateSubtotal() * 0.05)}</span>
               </div>
               <div className="summary-row total">
                 <span>Total:</span>
                 <span>
-                  $
-                  {(
-                    parseFloat(calculateTotal()) +
-                    parseFloat(calculateTotal()) * 0.05
-                  ).toFixed(2)}
+                  {formatPrice(parseFloat(calculateTotal()) + parseFloat(calculateTotal()) * 0.05)}
                 </span>
               </div>
               <button className="checkout-btn" onClick={handleCheckout}>

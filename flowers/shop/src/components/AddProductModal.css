@@ -19,11 +19,22 @@
   border-radius: 20px;
   width: 90%;
   max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
   position: relative;
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: white;
   animation: slideUp 0.3s ease-out;
+}
+
+.modal-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-content::-webkit-scrollbar-thumb {
+  background: var(--primary-pink);
+  border-radius: 10px;
 }
 
 .close-btn {
@@ -120,4 +131,24 @@
 @keyframes slideUp {
   from { transform: translateY(20px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
+}
+
+@media (max-width: 480px) {
+  .modal-content {
+    padding: 20px;
+    border-radius: 15px;
+  }
+
+  .modal-content h2 {
+    font-size: 20px;
+    margin-bottom: 20px;
+  }
+
+  .form-group {
+    margin-bottom: 15px;
+  }
+
+  .submit-btn {
+    padding: 12px;
+  }
 }
