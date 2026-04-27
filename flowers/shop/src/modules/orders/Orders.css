@@ -524,6 +524,72 @@
 .mt-4 { margin-top: 1.5rem; }
 
 /* Responsive */
+/* Error & Empty States */
+.orders-loading,
+.orders-error,
+.orders-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  text-align: center;
+  padding: 40px;
+}
+
+.spinner {
+  width: 60px;
+  height: 60px;
+  border: 5px solid rgba(74, 40, 97, 0.1);
+  border-top-color: var(--accent-purple);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 25px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.error-icon, .empty-icon {
+  font-size: 5rem;
+  margin-bottom: 25px;
+  filter: drop-shadow(0 10px 20px rgba(0,0,0,0.1));
+}
+
+.error-description {
+  color: var(--text-muted);
+  max-width: 450px;
+  margin: 15px auto 30px;
+  line-height: 1.6;
+}
+
+.retry-btn {
+  background: var(--accent-purple);
+  color: white;
+  border: none;
+  padding: 14px 35px;
+  border-radius: 50px;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 10px 20px rgba(74, 40, 97, 0.2);
+}
+
+.retry-btn:hover {
+  transform: translateY(-4px) scale(1.05);
+  background: var(--accent-pink);
+  box-shadow: 0 15px 30px rgba(255, 77, 148, 0.3);
+}
+
+.retry-btn:active {
+  transform: translateY(0);
+}
+
 @media (max-width: 1200px) {
   .order-card-body {
     grid-template-columns: 1fr;

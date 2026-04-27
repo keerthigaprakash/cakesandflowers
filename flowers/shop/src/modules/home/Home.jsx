@@ -69,7 +69,7 @@ const Home = ({ onAddToCart, refreshTrigger, isAdmin, onDeleteSuccess }) => {
     return (
       <>
         <div className='make-every'>
-          <h2>Make <span className='special'>Every Moment</span> Special!!🌸</h2>
+          <h2>Make Every Moment Special!!🌸</h2>
         </div>
         <div className="hero-slider">
           <div

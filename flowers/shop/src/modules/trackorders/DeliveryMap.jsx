@@ -1,7 +1,8 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline, Circle } from 'react-leaflet';
+import React, { useEffect, useState, useRef } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline, Circle, ZoomControl } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import './TrackOrders.css';
 
 // Fix default icons
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
@@ -90,8 +91,7 @@ const destIcon = L.divIcon({
   iconAnchor: [22, 58],
 });
 
-// ─── Smooth Map Controller ───────────────────────────────────────
-// Animates map to follow the tracking position smoothly
+// ─── Smooth Map Controller ────────────────────────────────────────
 const LiveMapController = ({ coords, autoFollow }) => {
   const map = useMap();
   const prevCoordsRef = useRef(null);
@@ -100,7 +100,6 @@ const LiveMapController = ({ coords, autoFollow }) => {
     if (!coords || !autoFollow) return;
 
     const prev = prevCoordsRef.current;
-    // Only pan if moved > ~5m to prevent jitter
     if (prev) {
       const dist = map.distance([prev.lat, prev.lng], [coords.lat, coords.lng]);
       if (dist < 3) return;
@@ -127,7 +126,7 @@ const BoundsController = ({ storeCoords, destCoords, active }) => {
       [storeCoords.lat, storeCoords.lng],
       [destCoords.lat, destCoords.lng]
     );
-    map.fitBounds(bounds, { padding: [60, 60], animate: true, duration: 1.2 });
+    map.fitBounds(bounds, { padding: [100, 40, 40, 40], animate: true, duration: 1.2 });
   }, [active, storeCoords, destCoords, map]);
   return null;
 };
@@ -162,12 +161,11 @@ const AnimatedDeliveryMarker = ({ coords }) => {
 
     const start = markerRef.current.getLatLng();
     const startTime = performance.now();
-    const DURATION = 800; // ms
+    const DURATION = 800;
 
     const animate = (now) => {
       const elapsed = now - startTime;
       const t = Math.min(elapsed / DURATION, 1);
-      // Ease out cubic
       const ease = 1 - Math.pow(1 - t, 3);
 
       const lat = start.lat + (target.lat - start.lat) * ease;
@@ -208,20 +206,56 @@ const AnimatedDeliveryMarker = ({ coords }) => {
 
 // ─── Main DeliveryMap Component ──────────────────────────────────
 const DeliveryMap = ({ deliveryCoords, customerAddress, socketEmitter = null, orderId = null }) => {
-  const storeCoords = { lat: 11.0018, lng: 77.0282 }; // Singanallur, Coimbatore
+  const storeCoords = { lat: 11.0018, lng: 77.0282 };
 
   const [destCoords, setDestCoords] = useState({ lat: 11.0168, lng: 76.9558 });
-  const [liveCoords, setLiveCoords] = useState(null);        // Device GPS
-  const [accuracy, setAccuracy] = useState(null);             // GPS accuracy in metres
+  const [liveCoords, setLiveCoords] = useState(null);
+  const [accuracy, setAccuracy] = useState(null);
   const [pathHistory, setPathHistory] = useState([storeCoords]);
-  const [autoFollow, setAutoFollow] = useState(false);   // start in overview mode
-  const [fitAll, setFitAll] = useState(true);             // show both markers on load
+  const [autoFollow, setAutoFollow] = useState(false);
+  const [fitAll, setFitAll] = useState(true);
   const [flyTarget, setFlyTarget] = useState(null);
-  const [gpsStatus, setGpsStatus] = useState('waiting'); // 'waiting' | 'active' | 'error'
+  const [gpsStatus, setGpsStatus] = useState('waiting');
   const watchIdRef = useRef(null);
 
-  // Effective position: prefer live device GPS > socket props
   const activeCoords = liveCoords || deliveryCoords;
+
+  // Routing States
+  const [fullRoutePath, setFullRoutePath] = useState([]);
+  const [remainingPath, setRemainingPath] = useState([]);
+  const [nextInstruction, setNextInstruction] = useState(null);
+
+  // ── Route Fetcher (OSRM) ───────────────────────────────────────
+  const fetchRoadRoute = async (start, end, isFull = false) => {
+    try {
+      const query = `https://router.project-osrm.org/route/v1/driving/${start.lng},${start.lat};${end.lng},${end.lat}?overview=full&geometries=geojson&steps=true`;
+      const res = await fetch(query);
+      const data = await res.json();
+      
+      if (data.code === 'Ok' && data.routes?.[0]) {
+        const route = data.routes[0];
+        const coords = route.geometry.coordinates.map(c => [c[1], c[0]]); // GeoJSON is [lng, lat]
+        
+        if (isFull) {
+          setFullRoutePath(coords);
+        } else {
+          setRemainingPath(coords);
+          // Extract next instruction
+          const nextStep = route.legs?.[0]?.steps?.[1]; // Step 0 is usually "Depart"
+          if (nextStep) {
+            setNextInstruction({
+              text: nextStep.maneuver.instruction,
+              type: nextStep.maneuver.type,
+              modifier: nextStep.maneuver.modifier,
+              distance: Math.round(nextStep.distance)
+            });
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Routing Error:', err);
+    }
+  };
 
   // ── Geocode destination ────────────────────────────────────────
   useEffect(() => {
@@ -263,6 +297,20 @@ const DeliveryMap = ({ deliveryCoords, customerAddress, socketEmitter = null, or
     geocode();
   }, [customerAddress]);
 
+  // ── Fetch Initial Full Route ───────────────────────────────────
+  useEffect(() => {
+    if (storeCoords && destCoords) {
+      fetchRoadRoute(storeCoords, destCoords, true);
+    }
+  }, [destCoords]);
+
+  // ── Fetch Remaining Route Dynamically ──────────────────────────
+  useEffect(() => {
+    if (activeCoords && destCoords) {
+      fetchRoadRoute(activeCoords, destCoords, false);
+    }
+  }, [activeCoords, destCoords]);
+
   // ── Device GPS Watcher ─────────────────────────────────────────
   useEffect(() => {
     if (!('geolocation' in navigator)) {
@@ -282,7 +330,6 @@ const DeliveryMap = ({ deliveryCoords, customerAddress, socketEmitter = null, or
         setLiveCoords(newCoords);
         setGpsStatus('active');
 
-        // Broadcast to other viewers via socket
         if (socketEmitter && orderId) {
           socketEmitter('updateDeliveryLocation', {
             orderId,
@@ -309,142 +356,122 @@ const DeliveryMap = ({ deliveryCoords, customerAddress, socketEmitter = null, or
     setPathHistory((prev) => {
       const last = prev[prev.length - 1];
       if (last && last.lat === activeCoords.lat && last.lng === activeCoords.lng) return prev;
-      // Keep max 200 points to avoid memory issues
       const updated = [...prev, activeCoords];
       return updated.length > 200 ? updated.slice(updated.length - 200) : updated;
     });
   }, [activeCoords]);
 
-  const handleFlyStore = () => { setFlyTarget(storeCoords); setAutoFollow(false); setFitAll(false); };
-  const handleFlyDest = () => { setFlyTarget(destCoords); setAutoFollow(false); setFitAll(false); };
-  const handleFollowDriver = () => { setAutoFollow(true); setFitAll(false); setFlyTarget(null); };
-  const handleFitAll = () => { setFitAll(true); setAutoFollow(false); setFlyTarget(null); };
+  const handleFlyStore    = () => { setFlyTarget(storeCoords); setAutoFollow(false); setFitAll(false); };
+  const handleFlyDest     = () => { setFlyTarget(destCoords);  setAutoFollow(false); setFitAll(false); };
+  const handleFollowDriver = () => { setAutoFollow(true);  setFitAll(false); setFlyTarget(null); };
+  const handleFitAll      = () => { setFitAll(true); setAutoFollow(false); setFlyTarget(null); };
 
   // Re-fit when destination updates (after geocode resolves)
   useEffect(() => { setFitAll(true); }, [destCoords]);
 
-  // Mid-point for initial center so both markers are roughly visible
   const initialCenter = [
     (storeCoords.lat + destCoords.lat) / 2,
     (storeCoords.lng + destCoords.lng) / 2,
   ];
 
+  const gpsClass =
+    gpsStatus === 'active'  ? 'gps-active'  :
+    gpsStatus === 'error'   ? 'gps-error'   : 'gps-waiting';
+
+  const getManeuverIcon = (mod) => {
+    if (!mod) return '⬆️';
+    const m = mod.toLowerCase();
+    if (m.includes('left')) return '⬅️';
+    if (m.includes('right')) return '➡️';
+    if (m.includes('sharp')) return '🔄';
+    if (m.includes('slight')) return '↗️';
+    return '⬆️';
+  };
+
   return (
-    <div style={{ fontFamily: 'inherit' }}>
-      {/* ── Route Info Bar ── */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px',
-        padding: '14px 20px',
-        background: 'white',
-        borderRadius: '18px',
-        marginBottom: '12px',
-        boxShadow: '0 4px 15px rgba(0,0,0,0.06)',
-        border: '1px solid rgba(33,150,243,0.15)',
-        flexWrap: 'wrap',
-      }}>
-        {/* Store */}
-        <button
-          onClick={handleFlyStore}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '8px',
-            background: 'rgba(255,77,166,0.06)', border: '1px solid rgba(255,77,166,0.2)',
-            borderRadius: '12px', padding: '8px 14px', cursor: 'pointer', flex: 1, minWidth: '140px',
-          }}
-        >
+    <div className="delivery-map-wrapper">
+
+      {/* ── Controls Bar — always rendered above the map, never hidden ── */}
+      <div className="map-controls-bar">
+
+        {/* From: Store */}
+        <button className="map-route-btn from" onClick={handleFlyStore}>
           <span style={{ fontSize: '20px' }}>🏪</span>
-          <div style={{ textAlign: 'left' }}>
-            <div style={{ fontSize: '10px', color: '#888', fontWeight: 700, textTransform: 'uppercase' }}>From</div>
-            <div style={{ fontSize: '13px', color: '#FF4DA6', fontWeight: 700 }}>Bloom & Bliss</div>
+          <div>
+            <div className="btn-label">From</div>
+            <div className="btn-value" style={{ color: '#FF4DA6' }}>Bloom &amp; Bliss</div>
           </div>
         </button>
 
-        <span style={{ color: '#ccc', fontSize: '20px' }}>→</span>
+        <span className="map-arrow">→</span>
 
-        {/* Destination */}
-        <button
-          onClick={handleFlyDest}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '8px',
-            background: 'rgba(76,175,80,0.06)', border: '1px solid rgba(76,175,80,0.2)',
-            borderRadius: '12px', padding: '8px 14px', cursor: 'pointer', flex: 1, minWidth: '140px',
-          }}
-        >
+        {/* To: Destination */}
+        <button className="map-route-btn to" onClick={handleFlyDest}>
           <span style={{ fontSize: '20px' }}>🏠</span>
-          <div style={{ textAlign: 'left' }}>
-            <div style={{ fontSize: '10px', color: '#888', fontWeight: 700, textTransform: 'uppercase' }}>To</div>
-            <div style={{
-              fontSize: '13px', color: '#4CAF50', fontWeight: 700,
-              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '160px',
-            }}>
+          <div>
+            <div className="btn-label">To</div>
+            <div className="btn-value" style={{ color: '#4CAF50' }}>
               {customerAddress || 'Customer'}
             </div>
           </div>
         </button>
 
-        {/* Fit All Button */}
+        {/* Turn-by-Turn Instruction Badge */}
+        {nextInstruction && (
+          <div className="map-instruction-pill" style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            background: 'rgba(33, 150, 243, 0.1)',
+            padding: '8px 14px',
+            borderRadius: '12px',
+            border: '1px solid rgba(33, 150, 243, 0.2)',
+            fontSize: '12px',
+            fontWeight: '700',
+            color: '#1565C0',
+            flexShrink: 0
+          }}>
+            <span style={{fontSize: '16px'}}>{getManeuverIcon(nextInstruction.modifier)}</span>
+            <div style={{display: 'flex', flexDirection: 'column'}}>
+              <span style={{fontSize: '10px', color: '#888', textTransform: 'uppercase'}}>In {nextInstruction.distance}m</span>
+              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '150px' }}>{nextInstruction.text}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Overview */}
         <button
+          className={`map-action-btn ${fitAll ? 'overview-active' : 'inactive'}`}
           onClick={handleFitAll}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '6px',
-            background: fitAll ? 'linear-gradient(135deg,#9C27B0,#6A1B9A)' : '#f5f5f5',
-            color: fitAll ? 'white' : '#666',
-            border: 'none', borderRadius: '12px', padding: '10px 16px',
-            cursor: 'pointer', fontSize: '13px', fontWeight: 700,
-            boxShadow: fitAll ? '0 4px 12px rgba(156,39,176,0.35)' : 'none',
-            transition: 'all 0.3s',
-          }}
         >
           🗺️ Overview
         </button>
 
-        {/* Follow Driver Button */}
+        {/* Follow Driver */}
         <button
+          className={`map-action-btn ${autoFollow ? 'follow-active' : 'inactive'}`}
           onClick={handleFollowDriver}
-          style={{
-            display: 'flex', alignItems: 'center', gap: '6px',
-            background: autoFollow ? 'linear-gradient(135deg,#2196F3,#1565C0)' : '#f5f5f5',
-            color: autoFollow ? 'white' : '#666',
-            border: 'none', borderRadius: '12px', padding: '10px 16px',
-            cursor: 'pointer', fontSize: '13px', fontWeight: 700,
-            boxShadow: autoFollow ? '0 4px 12px rgba(33,150,243,0.35)' : 'none',
-            transition: 'all 0.3s',
-          }}
         >
           {autoFollow ? '📡 Following' : '🎯 Follow Driver'}
         </button>
 
         {/* GPS Status */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: '6px',
-          background: gpsStatus === 'active' ? 'rgba(76,175,80,0.1)' : gpsStatus === 'error' ? 'rgba(244,67,54,0.1)' : 'rgba(255,152,0,0.1)',
-          color: gpsStatus === 'active' ? '#4CAF50' : gpsStatus === 'error' ? '#F44336' : '#FF9800',
-          padding: '8px 14px', borderRadius: '50px', fontSize: '12px', fontWeight: 700,
-        }}>
-          <span style={{
-            width: '8px', height: '8px', borderRadius: '50%',
-            background: 'currentColor',
-            display: 'inline-block',
-            animation: gpsStatus === 'active' ? 'gpsBlinkDot 1.2s ease-in-out infinite' : 'none',
-          }}></span>
+        <div className={`map-gps-status ${gpsClass}`}>
+          <span className={`gps-dot ${gpsStatus === 'active' ? 'blink-gps' : ''}`} />
           {gpsStatus === 'active' ? `GPS ±${accuracy}m` : gpsStatus === 'error' ? 'GPS Off' : 'GPS…'}
         </div>
       </div>
 
-      {/* ── Map ── */}
-      <div style={{
-        height: '420px', width: '100%', borderRadius: '22px',
-        overflow: 'hidden', boxShadow: '0 8px 30px rgba(0,0,0,0.15)',
-        border: '1px solid rgba(33,150,243,0.2)',
-      }}>
+      {/* ── Map Canvas ── */}
+      <div className="map-canvas">
         <MapContainer
           center={initialCenter}
           zoom={15}
           scrollWheelZoom
+          zoomControl={false}
           style={{ height: '100%', width: '100%' }}
         >
-          {/* Dark map tiles for premium look */}
+          <ZoomControl position="bottomright" />
           <TileLayer
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -453,7 +480,7 @@ const DeliveryMap = ({ deliveryCoords, customerAddress, socketEmitter = null, or
           {/* Store Marker */}
           <Marker position={[storeCoords.lat, storeCoords.lng]} icon={storeIcon}>
             <Popup>
-              <strong style={{ color: '#FF4DA6' }}>🏪 Bloom & Bliss Store</strong><br />
+              <strong style={{ color: '#FF4DA6' }}>🏪 Bloom &amp; Bliss Store</strong><br />
               Singanallur, Coimbatore<br />
               <em>Order dispatch point</em>
             </Popup>
@@ -486,57 +513,40 @@ const DeliveryMap = ({ deliveryCoords, customerAddress, socketEmitter = null, or
           {/* Animated Delivery Truck Marker */}
           {activeCoords && <AnimatedDeliveryMarker coords={activeCoords} />}
 
-          {/* ── Planned Route: Store → Destination (always visible) */}
-          <Polyline
-            positions={[
-              [storeCoords.lat, storeCoords.lng],
-              [destCoords.lat, destCoords.lng],
-            ]}
-            pathOptions={{
-              color: '#9E9E9E',
-              weight: 4,
-              opacity: 0.45,
-              dashArray: '6, 10',
-            }}
-          />
+          {/* Planned road route: store → destination */}
+          {fullRoutePath.length > 0 && (
+            <Polyline
+              positions={fullRoutePath}
+              pathOptions={{ color: '#2196F3', weight: 4, opacity: 0.2, dashArray: '5, 10' }}
+            />
+          )}
 
-          {/* ── Traveled trail: history of driver's actual path */}
+          {/* Traveled trail (Past) */}
           {pathHistory.length > 1 && (
             <Polyline
               positions={pathHistory.map((p) => [p.lat, p.lng])}
-              pathOptions={{ color: '#2196F3', weight: 5, opacity: 0.9, lineCap: 'round', lineJoin: 'round' }}
+              pathOptions={{ color: '#9E9E9E', weight: 4, opacity: 0.6, lineCap: 'round', lineJoin: 'round' }}
             />
           )}
 
-          {/* ── Remaining route: driver → destination (dashed pink) */}
-          {activeCoords && (
+          {/* Active Navigation Route (Future Road Path) - THE BLUE LINE */}
+          {remainingPath.length > 0 && (
             <Polyline
-              positions={[
-                [activeCoords.lat, activeCoords.lng],
-                [destCoords.lat, destCoords.lng],
-              ]}
-              pathOptions={{ color: '#FF4DA6', weight: 3.5, opacity: 0.7, dashArray: '10, 8' }}
+              positions={remainingPath}
+              pathOptions={{ color: '#2196F3', weight: 6, opacity: 0.9, lineCap: 'round', lineJoin: 'round' }}
             />
           )}
 
-          {/* Fit-all bounds — shows both store + destination */}
+          {/* Fit-all bounds */}
           <BoundsController storeCoords={storeCoords} destCoords={destCoords} active={fitAll} />
 
           {/* Auto-follow driver */}
           <LiveMapController coords={autoFollow ? activeCoords : null} autoFollow={autoFollow} />
 
-          {/* Fly to individual marker on button click */}
+          {/* Fly to individual marker */}
           {flyTarget && <FlyToController target={flyTarget} />}
         </MapContainer>
       </div>
-
-      {/* Inline keyframes */}
-      <style>{`
-        @keyframes gpsBlinkDot {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.3; }
-        }
-      `}</style>
     </div>
   );
 };

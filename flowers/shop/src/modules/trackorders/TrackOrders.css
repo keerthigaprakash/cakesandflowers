@@ -1,6 +1,6 @@
 .track-orders-page {
   padding: 60px 30px;
-  max-width: 900px;
+  max-width: 1000px;
   margin: 0 auto;
   min-height: 100vh;
 }
@@ -337,6 +337,194 @@
   transition: transform 0.5s linear !important;
 }
 
+/* ─── Delivery Map Section ─────────────────────────────────── */
+.delivery-map-wrapper {
+  position: relative;
+  display: block;
+  border-radius: 22px;
+  overflow: hidden;
+  border: 1px solid rgba(33, 150, 243, 0.2);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+}
+
+/* Controls bar — Floating HUD fixed above the map */
+.map-controls-bar {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  right: 15px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
+  z-index: 1100; /* Above Leaflet layers */
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none; /* Hide scrollbar Firefox */
+  -ms-overflow-style: none; /* Hide scrollbar IE/Edge */
+}
+
+.map-controls-bar::-webkit-scrollbar {
+  display: none; /* Hide scrollbar Chrome/Safari */
+}
+
+/* From / To route buttons */
+.map-route-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 12px;
+  padding: 8px 14px;
+  cursor: pointer;
+  flex: 1;
+  min-width: 130px;
+  border: 1px solid;
+  background: transparent;
+  transition: filter 0.2s ease, transform 0.15s ease;
+  text-align: left;
+}
+
+.map-route-btn:hover {
+  filter: brightness(0.94);
+  transform: translateY(-1px);
+}
+
+.map-route-btn:active {
+  transform: translateY(0);
+}
+
+.map-route-btn .btn-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #888;
+}
+
+.map-route-btn .btn-value {
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 160px;
+}
+
+.map-route-btn.from {
+  background: rgba(255, 77, 166, 0.06);
+  border-color: rgba(255, 77, 166, 0.25);
+}
+
+.map-route-btn.to {
+  background: rgba(76, 175, 80, 0.06);
+  border-color: rgba(76, 175, 80, 0.25);
+}
+
+.map-arrow {
+  color: #bbb;
+  font-size: 18px;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+/* Overview / Follow Driver toggle buttons */
+.map-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 16px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.map-action-btn:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+.map-action-btn:active {
+  transform: translateY(0);
+}
+
+.map-action-btn.inactive {
+  background: #f0f0f0;
+  color: #555;
+}
+
+.map-action-btn.overview-active {
+  background: linear-gradient(135deg, #9C27B0, #6A1B9A);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(156, 39, 176, 0.38);
+}
+
+.map-action-btn.follow-active {
+  background: linear-gradient(135deg, #2196F3, #1565C0);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(33, 150, 243, 0.38);
+}
+
+/* GPS status pill */
+.map-gps-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 50px;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.map-gps-status.gps-active {
+  background: rgba(76, 217, 100, 0.12);
+  color: #2e7d32;
+}
+
+.map-gps-status.gps-error {
+  background: rgba(244, 67, 54, 0.1);
+  color: #c62828;
+}
+
+.map-gps-status.gps-waiting {
+  background: rgba(255, 152, 0, 0.1);
+  color: #e65100;
+}
+
+.gps-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.gps-dot.blink-gps {
+  animation: gpsDotBlink 1.2s ease-in-out infinite;
+}
+
+@keyframes gpsDotBlink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.25; }
+}
+
+/* The map canvas itself */
+.map-canvas {
+  height: 600px;
+  width: 100%;
+  flex-shrink: 0;
+}
+
 @media (max-width: 600px) {
   .track-orders-page {
     padding: 30px 15px;
@@ -378,6 +566,33 @@
 
   .summary-items-list {
     grid-template-columns: 1fr;
+  }
+
+  .map-controls-bar {
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    padding: 10px 12px;
+    gap: 8px;
+    flex-wrap: nowrap; /* Keep it scrollable horizontally on mobile to save vertical space */
+  }
+
+  .map-route-btn {
+    min-width: 110px;
+    padding: 7px 10px;
+  }
+
+  .map-route-btn .btn-value {
+    max-width: 110px;
+  }
+
+  .map-action-btn {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .map-canvas {
+    height: 450px;
   }
 }
 

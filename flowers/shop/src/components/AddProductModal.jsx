@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { API_BASE_URL } from '../config';
 import './AddProductModal.css';
 
-const AddProductModal = ({ isOpen, onClose, onProductAdded }) => {
+const AddProductModal = ({ isOpen, onClose, onProductAdded, isAdmin = false }) => {
   const [formData, setFormData] = useState({
     name: '',
     price: '',
@@ -22,6 +22,10 @@ const AddProductModal = ({ isOpen, onClose, onProductAdded }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!isAdmin) {
+      setError('You do not have permission to perform this action.');
+      return;
+    }
     setLoading(true);
     setError('');
 
@@ -71,25 +75,46 @@ const AddProductModal = ({ isOpen, onClose, onProductAdded }) => {
   return (
     <div className="modal-overlay">
       <div className="modal-content">
+        <div className="modal-accent-bar"></div>
         <button className="close-btn" onClick={onClose}>&times;</button>
-        <h2>Add New Product 🎁</h2>
+        <h2 className="modal-title">Add New Product 🎁</h2>
         
-        {error && <p className="error-msg">{error}</p>}
+        {!isAdmin && (
+          <div className="permission-error">
+            You do not have permission to perform this action.
+          </div>
+        )}
 
-        <form onSubmit={handleSubmit}>
+        {error && isAdmin && <p className="error-msg">{error}</p>}
+
+        <form onSubmit={handleSubmit} className="add-product-form">
           <div className="form-group">
             <label>Product Name *</label>
-            <input type="text" name="name" value={formData.name} onChange={handleChange} required placeholder="e.g. Lavender Cupcake" />
+            <input 
+              type="text" 
+              name="name" 
+              value={formData.name} 
+              onChange={handleChange} 
+              required 
+              className="dark-input"
+            />
           </div>
 
           <div className="form-group">
             <label>Price (₹) *</label>
-            <input type="number" name="price" value={formData.price} onChange={handleChange} required placeholder="e.g. 250" />
+            <input 
+              type="number" 
+              name="price" 
+              value={formData.price} 
+              onChange={handleChange} 
+              required 
+              className="dark-input highlight-border"
+            />
           </div>
 
           <div className="form-group">
             <label>Category *</label>
-            <select name="category" value={formData.category} onChange={handleChange}>
+            <select name="category" value={formData.category} onChange={handleChange} className="dark-input">
               <option value="cakes">Cakes 🎂</option>
               <option value="flowers">Flowers 🌹</option>
               <option value="gifts">Gifts 🎁</option>
@@ -99,24 +124,33 @@ const AddProductModal = ({ isOpen, onClose, onProductAdded }) => {
 
           <div className="form-group">
             <label>Description</label>
-            <textarea name="description" value={formData.description} onChange={handleChange} placeholder="Brief description of the product..." />
+            <textarea 
+              name="description" 
+              value={formData.description} 
+              onChange={handleChange} 
+              className="dark-input"
+              rows="4"
+            />
           </div>
 
           <div className="form-group">
             <label>Product Image</label>
-            <input 
-              type="file" 
-              accept="image/*" 
-              onChange={(e) => {
-                if (e.target.files && e.target.files.length > 0) {
-                  setSelectedFile(e.target.files[0]);
-                }
-              }} 
-            />
-            <small>Upload a lovely picture from your device.</small>
+            <div className="file-input-wrapper">
+              <input 
+                type="file" 
+                accept="image/*" 
+                onChange={(e) => {
+                  if (e.target.files && e.target.files.length > 0) {
+                    setSelectedFile(e.target.files[0]);
+                  }
+                }} 
+                className="dark-input file-input"
+              />
+            </div>
+            <small className="helper-text">Upload a lovely picture from your device.</small>
           </div>
 
-          <button type="submit" className="submit-btn" disabled={loading}>
+          <button type="submit" className="submit-btn" disabled={loading || !isAdmin}>
             {loading ? 'Adding...' : 'Add Product'}
           </button>
         </form>

@@ -61,7 +61,8 @@ const getCategoryCounts = async () => {
   return model.getCategoryCounts();
 };
 
-/* ──────────────────────────── Auth ──────────────────────────────── */
+/* ──────────────────────────── Auth ────────────────────────────────
+ */
 
 const registerUser = async ({ name, email, password }) => {
   // Check if user already exists

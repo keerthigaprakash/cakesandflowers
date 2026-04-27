@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { io } from 'socket.io-client';
 import { getProductImage } from '../../utils/imageMapper';
 import { formatPrice } from '../../utils/currencyFormatter';
@@ -16,14 +16,34 @@ const Orders = () => {
   const [deliveryCoords, setDeliveryCoords] = useState({});
   const [socket, setSocket] = useState(null);
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     const token = localStorage.getItem('token');
+    setError('');
+    setLoading(true);
+    
     try {
-      if (!token) return;
+      if (!token) {
+        setError('Authentication token missing. Please log in again.');
+        setLoading(false);
+        return;
+      }
 
       const response = await fetch(`${API_BASE_URL}/orders/all`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json'
+        }
       });
+
+      if (!response.ok) {
+        if (response.status === 403) {
+          throw new Error('You do not have permission to access admin data. Please contact support.');
+        } else if (response.status === 401) {
+          throw new Error('Your session has expired. Please log in again.');
+        } else {
+          throw new Error(`Server returned error: ${response.status} ${response.statusText}`);
+        }
+      }
 
       const data = await response.json();
 
@@ -40,37 +60,42 @@ const Orders = () => {
         });
         setDeliveryCoords(initialCoords);
       } else {
-        setError(data.message || 'Failed to fetch orders.');
+        setError(data.message || 'Failed to fetch orders from the system.');
       }
     } catch (err) {
       console.error('Error fetching orders:', err);
-      if (err.name === 'TypeError' && err.message === 'Failed to fetch') {
-        setError('Server not reachable. Please check your connection.');
-      } else {
-        setError('Connection error while fetching orders.');
-      }
+      setError(err.message || 'A connection error occurred while fetching orders.');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchDeliveryPersonnel = async () => {
+  const fetchDeliveryPersonnel = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
+      if (!token) return;
+
       const response = await fetch(`${API_BASE_URL}/orders/delivery-personnel`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
-      if (data.success) setDeliveryPersonnel(data.data);
+      if (data.success) setDeliveryPersonnel(data.data || []);
     } catch (err) {
       console.error('Error fetching personnel:', err);
     }
-  };
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
+    if (!token) {
+      setError('Please login as an admin to view this page.');
+      setLoading(false);
+      return;
+    }
+
     const socketInstance = io(SOCKET_URL, {
       auth: { token },
+      reconnectionAttempts: 5
     });
 
     setSocket(socketInstance);
@@ -82,9 +107,7 @@ const Orders = () => {
     });
 
     socketInstance.on('orderStatusUpdate', (data) => {
-      console.log('👑 Admin Status Sync:', data);
       setOrders(prev => prev.map(o => o.id === data.order_id ? { ...o, status: data.status } : o));
-      
       if (data.status === 'shipped') {
         socketInstance.emit('joinOrderRoom', data.order_id);
       }
@@ -100,7 +123,7 @@ const Orders = () => {
     return () => {
       socketInstance.disconnect();
     };
-  }, []);
+  }, [fetchOrders, fetchDeliveryPersonnel]);
 
   // Sync rooms when orders load/change
   useEffect(() => {
@@ -126,10 +149,12 @@ const Orders = () => {
       });
       const data = await response.json();
       if (data.success) {
-        fetchOrders(); // Refresh list
+        fetchOrders();
+      } else {
+        alert(data.message || 'Failed to assign delivery.');
       }
     } catch (err) {
-      alert('Failed to assign delivery.');
+      alert('Network error while assigning delivery.');
     }
   };
 
@@ -152,7 +177,6 @@ const Orders = () => {
         alert(data.message || 'Failed to update status');
       }
     } catch (err) {
-      console.error('Status Update Error:', err);
       alert('Error updating status');
     }
   };
@@ -168,9 +192,11 @@ const Orders = () => {
       const data = await response.json();
       if (data.success) {
         setOrders(prev => prev.filter(o => o.id !== orderId));
+      } else {
+        alert(data.message || 'Failed to cancel order.');
       }
     } catch (err) {
-      alert('Failed to cancel order.');
+      alert('Network error while canceling order.');
     }
   };
 
@@ -179,7 +205,7 @@ const Orders = () => {
       <div className="admin-orders-page">
         <div className="orders-loading">
           <div className="spinner"></div>
-          <p>Initializing Secure Admin Session...</p>
+          <p>Syncing Command Center Data...</p>
         </div>
       </div>
     );
@@ -189,9 +215,12 @@ const Orders = () => {
     return (
       <div className="admin-orders-page">
         <div className="orders-error">
-          <span style={{ fontSize: '3.5rem' }}>🚫</span>
+          <span className="error-icon">🚫</span>
           <h2>Access or Connection Issue</h2>
-          <p>{error}</p>
+          <p className="error-description">{error}</p>
+          <button className="retry-btn" onClick={fetchOrders}>
+            🔄 Try Again
+          </button>
         </div>
       </div>
     );
@@ -205,9 +234,12 @@ const Orders = () => {
           <p>Analytics & Order Management Dashboard</p>
         </div>
         <div className="orders-empty">
-          <span style={{ fontSize: '5rem' }}>📭</span>
-          <h2>Awaiting New Purchases</h2>
-          <p>Your store front is live, but no orders have been processed yet.</p>
+          <span className="empty-icon">📭</span>
+          <h2>No data found</h2>
+          <p>The system is currently empty. No orders have been placed yet.</p>
+          <button className="retry-btn" onClick={fetchOrders} style={{ marginTop: '20px' }}>
+            Check for Updates
+          </button>
         </div>
       </div>
     );
@@ -255,17 +287,10 @@ const Orders = () => {
           const shipping = order.shipping_info || {};
           const customerName = shipping.fullName || order.customer_name || 'Guest User';
           const address = [shipping.address, shipping.city, shipping.zip].filter(Boolean).join(', ') || 'N/A';
-          
           const itemSubtotal = (order.items || []).reduce((sum, item) => sum + (Number(item.price) * (item.quantity || 1)), 0);
-
-          const orderDate = new Date(order.created_at).toLocaleDateString('en-IN', {
-            weekday: 'short',
-            day: 'numeric',
-            month: 'short',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-          });
+          const orderDate = order.created_at ? new Date(order.created_at).toLocaleDateString('en-IN', {
+            weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+          }) : 'Unknown Date';
 
           const currentStep = STATUSES.indexOf(order.status || 'pending');
 
@@ -275,13 +300,7 @@ const Orders = () => {
                 <div className="banner-left">
                   <span className="order-id-tag">ORDER #ORD-{order.id}</span>
                   <div className="order-actions-inline">
-                    <button 
-                      className="admin-action-btn cancel" 
-                      title="Cancel Order"
-                      onClick={() => handleCancelOrder(order.id)}
-                    >
-                      ✖
-                    </button>
+                    <button className="admin-action-btn cancel" onClick={() => handleCancelOrder(order.id)}>✖</button>
                   </div>
                 </div>
                 <span className="order-card-timestamp">{orderDate}</span>
@@ -289,88 +308,42 @@ const Orders = () => {
 
               <div className="order-card-body">
                 <div className="customer-panel">
-                  <div className="section-label">
-                    <span>👤</span> CUSTOMER PROFILE
-                  </div>
+                  <div className="section-label"><span>👤</span> CUSTOMER PROFILE</div>
                   <div className="customer-info-box">
-                    <div className="info-item">
-                      <label>Full Name</label>
-                      <span>{customerName}</span>
-                    </div>
-                    {order.customer_email && (
-                      <div className="info-item">
-                        <label>Contact Email</label>
-                        <span>{order.customer_email}</span>
-                      </div>
-                    )}
-                    <div className="info-item">
-                      <label>Delivery Address</label>
-                      <span>{address}</span>
-                    </div>
-                    {shipping.phone && (
-                      <div className="info-item">
-                        <label>Phone Number</label>
-                        <span>{shipping.phone}</span>
-                      </div>
-                    )}
+                    <div className="info-item"><label>Full Name</label><span>{customerName}</span></div>
+                    {order.customer_email && <div className="info-item"><label>Contact Email</label><span>{order.customer_email}</span></div>}
+                    <div className="info-item"><label>Delivery Address</label><span>{address}</span></div>
+                    {shipping.phone && <div className="info-item"><label>Phone Number</label><span>{shipping.phone}</span></div>}
                   </div>
                 </div>
 
                 <div className="logistics-panel">
-                  <div className="section-label">
-                    <span>🚚</span> DELIVERY ASSIGNMENT
-                  </div>
+                  <div className="section-label"><span>🚚</span> DELIVERY ASSIGNMENT</div>
                   <div className="assignment-box">
                     <label>Assign Delivery Person</label>
                     <div className="assignment-control-v2">
-                      <select 
-                        defaultValue={order.delivery_person_id || ""}
-                        onChange={(e) => handleAssign(order.id, e.target.value)}
-                      >
+                      <select value={order.delivery_person_id || ""} onChange={(e) => handleAssign(order.id, e.target.value)}>
                         <option value="">Select Personnel...</option>
-                        {deliveryPersonnel.map(p => (
-                          <option key={p.id} value={p.id}>{p.name} ({p.email})</option>
-                        ))}
+                        {deliveryPersonnel.map(p => <option key={p.id} value={p.id}>{p.name} ({p.email})</option>)}
                       </select>
-                      {order.delivery_person_id && (
-                        <div className="assigned-status">
-                          <span className="status-dot online"></span>
-                          ASSIGNED
-                        </div>
-                      )}
+                      {order.delivery_person_id && <div className="assigned-status"><span className="status-dot online"></span>ASSIGNED</div>}
                     </div>
                   </div>
 
-                  <div className="section-label mt-4">
-                    <span>📦</span> MANIFEST ITEMS
-                  </div>
+                  <div className="section-label mt-4"><span>📦</span> MANIFEST ITEMS</div>
                   <table className="order-table">
-                    <thead>
-                      <tr>
-                        <th>Product</th>
-                        <th>Qty</th>
-                        <th style={{ textAlign: 'right' }}>Price</th>
-                      </tr>
-                    </thead>
+                    <thead><tr><th>Product</th><th>Qty</th><th style={{ textAlign: 'right' }}>Price</th></tr></thead>
                     <tbody>
                       {(order.items || []).map((item, idx) => (
                         <tr key={idx} className="item-row">
                           <td className="item-name-cell">
                             <div className="item-with-thumb">
-                              <img
-                                src={getProductImage(item.product_image)}
-                                alt={item.product_name}
-                                className="item-thumb-mini"
-                              />
+                              <img src={getProductImage(item.product_image)} alt={item.product_name} className="item-thumb-mini" />
                               {item.product_name || 'Legacy Product'}
                             </div>
                           </td>
-                          <td style={{ fontWeight: 600, color: '#666' }}>
-                            × {item.quantity}
-                          </td>
-                          <td className="item-price-cell">
-                            {formatPrice(item.price)}
-                          </td>
+                          <td style={{ fontWeight: 600, color: '#666' }}>× {item.quantity}</td>
+                          <td className="item-price-cell">{formatPrice(item.price)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -378,79 +351,29 @@ const Orders = () => {
                 </div>
               </div>
 
-              {/* Order Fullfilment Timeline */}
               <div className="status-timeline-container">
                 <div className="section-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
                   <span>📡 LIVE TRACKING & LOGISTICS</span>
-                  {order.status === 'shipped' && (
-                    <button 
-                      className="simulate-gps-btn"
-                      onClick={() => {
-                        if (socket && navigator.geolocation) {
-                          navigator.geolocation.watchPosition(
-                            (pos) => {
-                              socket.emit('updateDeliveryLocation', {
-                                orderId: order.id,
-                                lat: pos.coords.latitude,
-                                lng: pos.coords.longitude
-                              });
-                            },
-                            (err) => console.error('GPS Error:', err),
-                            { enableHighAccuracy: true }
-                          );
-                          alert('GPS Simulation Started! Your coordinates are being broadcasted.');
-                        } else if (!socket) {
-                          alert('Socket not connected. Please refresh.');
-                        }
-                      }}
-                    >
-                      📡 Broadcast GPS
-                    </button>
-                  )}
                 </div>
-                {/* Admin Live Map */}
                 {order.status === 'shipped' && (
                   <div className="track-map-section">
-                    <DeliveryMap 
-                      deliveryCoords={deliveryCoords[order.id]} 
-                      customerAddress={address}
-                    />
+                    <DeliveryMap deliveryCoords={deliveryCoords[order.id]} customerAddress={address} />
                   </div>
                 )}
-
                 <div className="admin-timeline">
-                  {STATUSES.map((status, idx) => {
-                    const isCompleted = idx <= currentStep;
-                    const isCurrent = idx === currentStep;
-                    const isClickable = true; // Admin can jump to any status
-
-                    return (
-                      <div 
-                        key={status} 
-                        className={`admin-timeline-step ${isCompleted ? 'completed' : ''} ${isCurrent ? 'current' : ''} clickable`}
-                        onClick={() => handleStatusUpdate(order.id, status)}
-                      >
-                        <div className="admin-timeline-dot">
-                          {isCompleted ? '✓' : (idx + 1)}
-                        </div>
-                        {idx < STATUSES.length - 1 && (
-                          <div className={`admin-timeline-line ${idx < currentStep ? 'filled' : ''}`}></div>
-                        )}
-                        <span className="admin-timeline-label">{status}</span>
-                      </div>
-                    );
-                  })}
+                  {STATUSES.map((status, idx) => (
+                    <div key={status} className={`admin-timeline-step ${idx <= currentStep ? 'completed' : ''} ${idx === currentStep ? 'current' : ''} clickable`} onClick={() => handleStatusUpdate(order.id, status)}>
+                      <div className="admin-timeline-dot">{idx <= currentStep ? '✓' : (idx + 1)}</div>
+                      {idx < STATUSES.length - 1 && <div className={`admin-timeline-line ${idx < currentStep ? 'filled' : ''}`}></div>}
+                      <span className="admin-timeline-label">{status}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
 
               <div className="order-card-footer">
-                <div className="footer-stat">
-                  <span className="stat-label">Order Total</span>
-                  <span className="stat-value">{formatPrice(itemSubtotal)}</span>
-                </div>
-                <div className="order-status-badge" data-status={order.status || 'pending'}>
-                  {order.status?.toUpperCase() || 'PENDING'}
-                </div>
+                <div className="footer-stat"><span className="stat-label">Order Total</span><span className="stat-value">{formatPrice(itemSubtotal)}</span></div>
+                <div className="order-status-badge" data-status={order.status || 'pending'}>{order.status?.toUpperCase() || 'PENDING'}</div>
               </div>
             </div>
           );

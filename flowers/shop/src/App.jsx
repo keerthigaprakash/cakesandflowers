@@ -151,11 +151,12 @@ function App() {
           </Routes>
         </div>
 
-        {isLoggedIn && user?.role === 'admin' && (
+        {isLoggedIn && (
           <AddProductModal 
             isOpen={isModalOpen} 
             onClose={() => setIsModalOpen(false)} 
             onProductAdded={handleProductAdded} 
+            isAdmin={user?.role === 'admin'}
           />
         )}
 
